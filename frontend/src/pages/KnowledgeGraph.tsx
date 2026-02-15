@@ -66,17 +66,21 @@ export function KnowledgeGraph() {
   const fetchGraphData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching graph data...');
       const response = await fetch('http://localhost:8000/knowledge-graph/');
       if (!response.ok) {
         throw new Error(`Failed to fetch graph data: ${response.statusText}`);
       }
       const data: KnowledgeGraphData = await response.json();
+      console.log('Fetched data:', { nodes: data.nodes.length, edges: data.edges.length });
+      console.log('Dimensions:', dimensions);
 
       // Set RANDOM spread out positions across the entire screen
       const padding = 150;
       const nodes = data.nodes.map((node, i) => {
         const x = padding + Math.random() * (dimensions.width - padding * 2);
         const y = padding + Math.random() * (dimensions.height - padding * 2);
+        console.log(`Node ${i} position:`, { x, y });
         return {
           ...node,
           x: x,
@@ -86,6 +90,7 @@ export function KnowledgeGraph() {
         };
       });
 
+      console.log('Setting graph data with', nodes.length, 'nodes');
       setGraphData({
         nodes: nodes,
         links: data.edges
@@ -96,6 +101,7 @@ export function KnowledgeGraph() {
       setError(err instanceof Error ? err.message : 'Failed to load knowledge graph');
     } finally {
       setLoading(false);
+      console.log('Loading finished');
     }
   };
 

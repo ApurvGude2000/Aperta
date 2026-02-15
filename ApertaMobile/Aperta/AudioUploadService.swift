@@ -27,12 +27,12 @@ class AudioUploadService: NSObject, ObservableObject {
     /// Upload an audio file to the backend for processing
     /// - Parameters:
     ///   - audioFileURL: URL of the audio file to upload
-    ///   - eventName: Name of the event (optional)
+    ///   - eventName: Name of the event (REQUIRED - determines transcript file)
     ///   - location: Location of the event (optional)
     ///   - conversationId: Optional existing conversation ID to update
     func uploadAudioFile(
         _ audioFileURL: URL,
-        eventName: String? = nil,
+        eventName: String,
         location: String? = nil,
         conversationId: String? = nil
     ) async -> Result<AudioUploadResponse, AudioUploadError> {
@@ -63,13 +63,12 @@ class AudioUploadService: NSObject, ObservableObject {
             body.append(audioData)
             body.append("\r\n".data(using: .utf8)!)
 
-            // Add optional parameters
-            if let eventName = eventName {
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                body.append("Content-Disposition: form-data; name=\"event_name\"\r\n\r\n".data(using: .utf8)!)
-                body.append("\(eventName)\r\n".data(using: .utf8)!)
-            }
+            // Add event_name (required)
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"event_name\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(eventName)\r\n".data(using: .utf8)!)
 
+            // Add optional parameters
             if let location = location {
                 body.append("--\(boundary)\r\n".data(using: .utf8)!)
                 body.append("Content-Disposition: form-data; name=\"location\"\r\n\r\n".data(using: .utf8)!)

@@ -4,6 +4,7 @@ struct RecordingView: View {
     let event: Event
     let onEndEvent: () -> Void
     @StateObject private var recorder = SimpleWhisperRecorder()
+    @StateObject private var uploadService = AudioUploadService.shared
     @State private var showError = false
     @State private var hasRecordedOnce = false
     @State private var currentEvent: Event
@@ -12,6 +13,7 @@ struct RecordingView: View {
     @State private var newRecordingName = ""
     @State private var showDeleteConfirmation = false
     @State private var showRenameDialog = false
+    @State private var uploadStatus = ""
     @Environment(\.dismiss) private var dismiss
 
     init(event: Event, onEndEvent: @escaping () -> Void) {
@@ -325,6 +327,29 @@ struct RecordingView: View {
                                         print("🎵 Audio saved at: \(recordingData.audioFilePath)")
                                         print("📊 Event now has \(currentEvent.recordings.count) recording(s)")
 
+                                        // Auto-upload to backend
+                                        uploadStatus = "Uploading to cloud..."
+                                        if let audioPath = recordingData.audioFilePath {
+                                            let fileManager = FileManager.default
+                                            let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                                            let audioURL = documentsURL.appendingPathComponent(audioPath)
+
+                                            let result = await uploadService.uploadAudioFile(
+                                                audioURL,
+                                                eventName: event.name,
+                                                location: event.location
+                                            )
+
+                                            switch result {
+                                            case .success(let response):
+                                                uploadStatus = "✓ Uploaded"
+                                                print("✅ Upload successful: \(response.message)")
+                                            case .failure(let error):
+                                                uploadStatus = "✗ Upload failed: \(error.localizedDescription)"
+                                                print("❌ Upload failed: \(error)")
+                                            }
+                                        }
+
                                     } catch {
                                         showError = true
                                         print("❌ Error saving recording: \(error)")
@@ -362,11 +387,27 @@ struct RecordingView: View {
             }
             .padding(.horizontal)
             .padding(.top, 20)
-            
-            if recorder.isTranscribing {
-                HStack {
-                    ProgressView()
-                    Text("Transcribing...")
+
+            // Status indicators
+            VStack(spacing: 8) {
+                if recorder.isTranscribing {
+                    HStack {
+                        ProgressView()
+                        Text("Transcribing...")
+                    }
+                }
+
+                if uploadService.isUploading {
+                    HStack {
+                        ProgressView()
+                        Text("Uploading to cloud...")
+                    }
+                }
+
+                if !uploadStatus.isEmpty && !uploadService.isUploading {
+                    Text(uploadStatus)
+                        .font(.caption)
+                        .foregroundColor(uploadStatus.starts(with: "✓") ? .green : .red)
                 }
             }
         }

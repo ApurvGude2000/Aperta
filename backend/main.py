@@ -23,7 +23,7 @@ from agents.follow_up import FollowUpAgent
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations
+from api.routes import qa, conversations, audio
 
 logger = setup_logger(__name__)
 
@@ -118,6 +118,7 @@ app.add_middleware(
 # Include routers
 app.include_router(qa.router)
 app.include_router(conversations.router)
+app.include_router(audio.router)
 
 
 @app.get("/")

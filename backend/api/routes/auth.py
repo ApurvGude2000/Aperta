@@ -8,6 +8,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
+from typing import Optional
 import logging
 
 from db.session import get_db_session
@@ -56,8 +57,8 @@ class UserResponse(BaseModel):
     id: str
     email: str
     username: str
-    full_name: str = None
-    company: str = None
+    full_name: Optional[str] = None
+    company: Optional[str] = None
     is_active: bool
     is_verified: bool
     created_at: datetime

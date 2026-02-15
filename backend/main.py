@@ -24,7 +24,7 @@ from agents import (
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations, search, auth
+from api.routes import qa, conversations, search, auth, dashboard
 
 logger = setup_logger(__name__)
 
@@ -172,6 +172,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(dashboard.router)
 app.include_router(qa.router)
 app.include_router(conversations.router)
 app.include_router(search.router)

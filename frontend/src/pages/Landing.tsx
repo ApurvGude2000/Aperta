@@ -51,9 +51,11 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 font-display font-bold text-2xl">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1F3C88] to-[#00C2FF] flex items-center justify-center text-white">
-                🤖
-              </div>
+              <img
+                src="/TH_logo.png"
+                alt="Aperta Logo"
+                className="w-10 h-10 rounded-full object-cover"
+              />
               <span className="text-[#121417]">Aperta</span>
             </div>
 
@@ -105,8 +107,12 @@ export function Landing() {
           </div>
         </div>
         <div className="hidden lg:flex flex-1 justify-end">
-          <div className="w-96 h-96 rounded-2xl bg-gradient-to-br from-[#1F3C88]/10 to-[#00C2FF]/10 flex items-center justify-center">
-            <div className="text-8xl animate-pulse">🕸️</div>
+          <div className="w-full max-w-2xl h-[500px] rounded-2xl overflow-hidden">
+            <img
+              src="/necklace.jpeg"
+              alt="Network Visualization"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </section>

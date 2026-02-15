@@ -117,9 +117,13 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     """Initialize database tables."""
     from .models import Base
+    from .models_auth import Base as AuthBase
 
     async with engine.begin() as conn:
+        # Create main app tables
         await conn.run_sync(Base.metadata.create_all)
+        # Create auth tables
+        await conn.run_sync(AuthBase.metadata.create_all)
     logger.info("Database tables created successfully")
 
 

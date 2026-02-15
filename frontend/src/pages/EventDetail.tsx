@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { Navigation } from '../components/design-system/Navigation';
-import { Sidebar } from '../components/design-system/Sidebar';
 import { Card } from '../components/design-system/Card';
 import { Button } from '../components/design-system/Button';
 
 export function EventDetail() {
   const [activeTab, setActiveTab] = useState<'people' | 'conversations' | 'linkedin' | 'insights' | 'graph' | 'analytics'>('people');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const tabs = [
     { id: 'people', label: 'People', icon: '👥' },
@@ -73,10 +71,7 @@ export function EventDetail() {
     <div className="min-h-screen bg-[#F5F7FA]">
       <Navigation isAuthenticated={true} />
 
-      <div className="flex">
-        <Sidebar isOpen={sidebarOpen} />
-
-        <main className="flex-1 p-8">
+      <main className="max-w-7xl mx-auto p-8">
           {/* Header */}
           <div className="mb-8">
             <button className="text-[#00C2FF] font-medium mb-4">← Back to Events</button>

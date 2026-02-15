@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Navigation } from '../components/design-system/Navigation';
-import { Sidebar } from '../components/design-system/Sidebar';
 import { Card } from '../components/design-system/Card';
 import { Button } from '../components/design-system/Button';
 
 export function KnowledgeGraph() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedNode, setSelectedNode] = useState<any>(null);
 
   const filterOptions = {
@@ -30,10 +28,7 @@ export function KnowledgeGraph() {
     <div className="min-h-screen bg-[#F5F7FA]">
       <Navigation isAuthenticated={true} />
 
-      <div className="flex">
-        <Sidebar isOpen={sidebarOpen} />
-
-        <main className="flex-1 p-8">
+      <main className="max-w-7xl mx-auto p-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-[#121417] mb-2">Knowledge Graph</h1>
@@ -171,8 +166,7 @@ export function KnowledgeGraph() {
               </div>
             )}
           </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

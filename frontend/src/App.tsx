@@ -3,14 +3,17 @@
 
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Landing } from './pages/Landing';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Events } from './pages/Events';
-import { EventDetail } from './pages/EventDetail';
+import { EventDetailNew } from './pages/EventDetailNew';
 import { KnowledgeGraph } from './pages/KnowledgeGraph';
 import { ConversationList } from './pages/ConversationList';
 import { ConversationDetail } from './pages/ConversationDetail';
 import { ConversationForm } from './pages/ConversationForm';
 import { AskQuestions } from './pages/AskQuestions';
+import { Settings } from './pages/Settings';
 
 function Navigation() {
   const location = useLocation();
@@ -65,10 +68,13 @@ export function App() {
       <Routes>
         {/* New UI/UX Prototypes */}
         <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/events/:id" element={<EventDetailNew />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+        <Route path="/settings" element={<Settings />} />
 
         {/* Existing Features */}
         <Route path="/old" element={<ConversationList />} />

@@ -15,11 +15,10 @@ export function Navigation({ showAuth = true, isAuthenticated = false, onLogout 
   };
 
   const navLinks = [
-    { path: '/', label: 'Dashboard', icon: '🏠' },
+    { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { path: '/events', label: 'Events', icon: '📅' },
     { path: '/knowledge-graph', label: 'Knowledge Graph', icon: '🧠' },
-    { path: '/transcripts', label: 'Transcripts', icon: '📄' },
-    { path: '/analytics', label: 'Analytics', icon: '📊' },
+    { path: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (
@@ -27,11 +26,9 @@ export function Navigation({ showAuth = true, isAuthenticated = false, onLogout 
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 font-display font-bold text-2xl">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1F3C88] to-[#00C2FF] flex items-center justify-center text-white">
-              🤖
-            </div>
-            <span className="text-[#121417]">Agent-Echo</span>
+          <Link to="/dashboard" className="flex items-center gap-3 font-display font-bold text-2xl">
+            <img src="/TH_logo.png" alt="Aperta" className="h-10" />
+            <span className="text-[#121417]">Aperta</span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -7,10 +7,10 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { icon: '🏠', label: 'Dashboard', path: '/' },
+  { icon: '🏠', label: 'Dashboard', path: '/dashboard' },
   { icon: '📅', label: 'Events', path: '/events' },
   { icon: '🧠', label: 'Knowledge Graph', path: '/knowledge-graph' },
-  { icon: '📄', label: 'Transcripts', path: '/transcripts' },
+  { icon: '💬', label: 'Conversations', path: '/old' },
   { icon: '📊', label: 'Analytics', path: '/analytics' },
   { icon: '⚙️', label: 'Settings', path: '/settings' },
 ];
@@ -19,7 +19,10 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
   const location = useLocation();
 
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path);
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
+    }
+    return location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
   };
 
   return (

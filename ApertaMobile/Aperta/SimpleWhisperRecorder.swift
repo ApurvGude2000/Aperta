@@ -326,7 +326,12 @@ public class SimpleWhisperRecorder: ObservableObject {
             }
 
             // Extract text from segments (result is an array of TranscriptionResult)
-            transcriptionText = result.map { $0.text }.joined(separator: " ")
+            let rawTranscript = result.map { $0.text }.joined(separator: " ")
+
+            // Redact PII using PII Guardian
+            print("🛡️ Running PII Guardian on transcript...")
+            let redactedTranscript = try await LLMModelManager.shared.redactPII(from: rawTranscript)
+            transcriptionText = redactedTranscript
 
             // Save segments for Recording model
             // Each TranscriptionResult has segments

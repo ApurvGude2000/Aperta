@@ -374,7 +374,11 @@ struct RecordingView: View {
         .navigationBarBackButtonHidden(true)
         .task {
             do {
+                // Load Whisper model for transcription
                 try await recorder.loadModel(variant: "small")
+
+                // Load PII Guardian for privacy protection
+                try await LLMModelManager.shared.loadModel()
             } catch {
                 showError = true
             }

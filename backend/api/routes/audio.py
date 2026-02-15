@@ -16,11 +16,12 @@ import uuid
 import json
 
 from db.session import get_db_session
-from db.models import Conversation, Participant
+from db.models import Conversation, Participant, AudioRecording, Transcription
 from services.audio_processor import AudioProcessor, DiarizedTranscript
 from services.storage import StorageService, StorageConfig
 from config import settings
 from utils.logger import setup_logger
+from agents import ContextUnderstandingAgent, PrivacyGuardianAgent
 
 logger = setup_logger(__name__)
 router = APIRouter(prefix="/audio", tags=["Audio Processing"])
@@ -29,6 +30,15 @@ router = APIRouter(prefix="/audio", tags=["Audio Processing"])
 # Pydantic models
 class SpeakerSegmentResponse(BaseModel):
     """A segment of speech from a single speaker."""
+    speaker_id: int
+    start_time: float
+    end_time: float
+    text: str
+    confidence: float
+
+
+class TranscriptionSegment(BaseModel):
+    """Segment of transcribed speech."""
     speaker_id: int
     start_time: float
     end_time: float
@@ -46,6 +56,48 @@ class DiarizedTranscriptResponse(BaseModel):
     formatted_transcript: str
     speaker_stats: dict
     created_at: datetime
+
+
+class TranscriptionDetailResponse(BaseModel):
+    """Detailed transcription with analysis results."""
+    id: str
+    recording_id: str
+    conversation_id: str
+    raw_text: Optional[str]
+    formatted_text: Optional[str]
+    speaker_count: int
+    speaker_names: dict
+    segments: list
+    confidence_score: Optional[float]
+    sentiment: Optional[str]
+    summary: Optional[str]
+    entities: list
+    action_items: list
+    transcript_file_path: Optional[str]
+    created_at: datetime
+
+
+class AudioRecordingResponse(BaseModel):
+    """Audio recording with transcription data."""
+    id: str
+    conversation_id: str
+    file_path: str
+    file_size: int
+    file_format: str
+    duration: float
+    original_filename: str
+    processing_status: str
+    created_at: datetime
+    transcription: Optional[TranscriptionDetailResponse] = None
+
+
+class EventAudioProcessResponse(BaseModel):
+    """Response for processing audio from an event."""
+    conversation_id: str
+    audio_recording: AudioRecordingResponse
+    transcription: TranscriptionDetailResponse
+    ai_analysis: dict
+    message: str
 
 
 class AudioUploadResponse(BaseModel):
@@ -247,6 +299,169 @@ async def process_audio_file(
     except Exception as e:
         logger.error(f"Error processing audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
+
+
+@router.post("/process-event", response_model=EventAudioProcessResponse, status_code=200)
+async def process_event_audio(
+    file: UploadFile = File(...),
+    conversation_id: Optional[str] = None,
+    event_name: Optional[str] = None,
+    location: Optional[str] = None,
+    db: Optional[AsyncSession] = Depends(lambda: _get_optional_db_session())
+) -> EventAudioProcessResponse:
+    """
+    Process audio file from an event with full AI analysis.
+
+    This endpoint:
+    1. Accepts audio file from iOS app or web
+    2. Runs transcription and speaker diarization
+    3. Runs AI agents for entity extraction, sentiment analysis
+    4. Stores everything with proper relationships
+    5. Returns comprehensive analysis
+
+    Args:
+        file: Audio file upload
+        conversation_id: Optional existing conversation ID
+        event_name: Name of the event
+        location: Event location
+        db: Database session
+
+    Returns:
+        EventAudioProcessResponse with full analysis
+    """
+    try:
+        # Validate file
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="No file provided")
+
+        if not _is_audio_file(file.filename):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file format. Supported: WAV, MP3, FLAC, OGG, M4A"
+            )
+
+        # Load and preprocess audio
+        logger.info(f"Loading audio file: {file.filename}")
+        audio_bytes = await file.read()
+        audio_data, sample_rate = await _load_audio_file_from_bytes(audio_bytes)
+
+        # Generate conversation ID if not provided
+        conv_id = conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
+
+        # Process audio (transcribe + diarize)
+        logger.info("Starting audio processing (transcription + diarization)...")
+        processor = get_audio_processor()
+        diarized_transcript = await processor.process_audio_stream(audio_data, sample_rate)
+        diarized_transcript.conversation_id = conv_id
+
+        # Format transcript
+        formatted = processor.format_transcript(diarized_transcript)
+        stats = processor.get_speaker_stats(diarized_transcript)
+
+        # Save audio file to storage
+        logger.info(f"Saving audio file to storage...")
+        storage = get_storage_service()
+        audio_file_path = await storage.save_audio_file(
+            file_content=audio_bytes,
+            conversation_id=conv_id,
+            filename=file.filename,
+            metadata={
+                "duration": diarized_transcript.total_duration,
+                "speaker_count": diarized_transcript.speaker_count,
+                "event_name": event_name,
+                "location": location,
+                "uploaded_at": datetime.utcnow().isoformat(),
+            },
+        )
+
+        # Save transcript to storage
+        logger.info(f"Saving transcript to storage...")
+        transcript_file_path = await storage.save_transcript(
+            transcript_text=formatted,
+            conversation_id=conv_id,
+            format="txt",
+        )
+
+        # Run AI agents for analysis
+        logger.info("Running AI agents for analysis...")
+        ai_analysis = await _run_audio_analysis_agents(formatted)
+
+        # Save to database
+        recording_id = None
+        transcription_id = None
+        if db:
+            try:
+                logger.info(f"Saving audio and transcription to database: {conv_id}")
+                recording_id, transcription_id = await _save_event_audio_with_analysis(
+                    db=db,
+                    conversation_id=conv_id,
+                    diarized_transcript=diarized_transcript,
+                    filename=file.filename,
+                    audio_file_path=audio_file_path,
+                    transcript_file_path=transcript_file_path,
+                    audio_bytes=audio_bytes,
+                    event_name=event_name,
+                    location=location,
+                    ai_analysis=ai_analysis,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save to database: {e}. Audio files still saved to filesystem.")
+        else:
+            logger.info("Database unavailable - audio files saved to filesystem only")
+
+        # Build response
+        audio_recording = AudioRecordingResponse(
+            id=recording_id or f"rec_{uuid.uuid4().hex[:12]}",
+            conversation_id=conv_id,
+            file_path=audio_file_path,
+            file_size=len(audio_bytes),
+            file_format=file.filename.split(".")[-1].lower(),
+            duration=diarized_transcript.total_duration,
+            original_filename=file.filename,
+            processing_status="completed",
+            created_at=datetime.utcnow(),
+        )
+
+        transcription_response = TranscriptionDetailResponse(
+            id=transcription_id or f"trans_{uuid.uuid4().hex[:12]}",
+            recording_id=audio_recording.id,
+            conversation_id=conv_id,
+            raw_text=formatted,
+            formatted_text=formatted,
+            speaker_count=diarized_transcript.speaker_count,
+            speaker_names=diarized_transcript.speaker_names,
+            segments=[
+                {
+                    "speaker_id": seg.speaker_id,
+                    "start_time": seg.start_time,
+                    "end_time": seg.end_time,
+                    "text": seg.text,
+                    "confidence": seg.confidence,
+                }
+                for seg in diarized_transcript.segments
+            ],
+            confidence_score=ai_analysis.get("confidence_score"),
+            sentiment=ai_analysis.get("sentiment"),
+            summary=ai_analysis.get("summary"),
+            entities=ai_analysis.get("entities", []),
+            action_items=ai_analysis.get("action_items", []),
+            transcript_file_path=transcript_file_path,
+            created_at=datetime.utcnow(),
+        )
+
+        return EventAudioProcessResponse(
+            conversation_id=conv_id,
+            audio_recording=audio_recording,
+            transcription=transcription_response,
+            ai_analysis=ai_analysis,
+            message=f"Successfully processed event audio with {diarized_transcript.speaker_count} speakers"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing event audio: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing event audio: {str(e)}")
 
 
 @router.get("/speakers/{conversation_id}")
@@ -546,3 +761,190 @@ def _build_readable_transcript(diarized: DiarizedTranscript) -> str:
         lines.append(f"{speaker_name}: {seg.text}")
 
     return "\n".join(lines)
+
+
+async def _run_audio_analysis_agents(formatted_transcript: str) -> dict:
+    """
+    Run AI agents to analyze the transcribed audio.
+
+    Args:
+        formatted_transcript: Formatted transcript text
+
+    Returns:
+        Dictionary with analysis results
+    """
+    try:
+        from anthropic import Anthropic
+        client = Anthropic()
+
+        # Use Claude to extract entities, action items, sentiment, and generate summary
+        analysis_prompt = f"""Analyze this conversation transcript and provide:
+1. A brief summary (1-2 sentences)
+2. Overall sentiment (positive, negative, neutral, mixed)
+3. Key entities (people, companies, technologies mentioned)
+4. Action items and commitments made
+5. Confidence score (0-1) for the analysis
+
+Format your response as JSON with keys: summary, sentiment, entities, action_items, confidence_score
+
+Transcript:
+{formatted_transcript}"""
+
+        message = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=1024,
+            messages=[
+                {"role": "user", "content": analysis_prompt}
+            ]
+        )
+
+        # Parse the response
+        response_text = message.content[0].text
+        try:
+            # Try to parse as JSON
+            import json
+            analysis = json.loads(response_text)
+        except:
+            # Fallback if JSON parsing fails
+            analysis = {
+                "summary": response_text,
+                "sentiment": "unknown",
+                "entities": [],
+                "action_items": [],
+                "confidence_score": 0.5
+            }
+
+        logger.info(f"Audio analysis completed: {analysis}")
+        return analysis
+
+    except Exception as e:
+        logger.warning(f"Error running audio analysis agents: {e}")
+        return {
+            "summary": None,
+            "sentiment": None,
+            "entities": [],
+            "action_items": [],
+            "confidence_score": 0.0
+        }
+
+
+async def _save_event_audio_with_analysis(
+    db: AsyncSession,
+    conversation_id: str,
+    diarized_transcript: DiarizedTranscript,
+    filename: str,
+    audio_file_path: str,
+    transcript_file_path: str,
+    audio_bytes: bytes,
+    event_name: Optional[str],
+    location: Optional[str],
+    ai_analysis: dict,
+) -> tuple[str, str]:
+    """
+    Save audio recording and transcription with AI analysis results to database.
+
+    Args:
+        db: Database session
+        conversation_id: Conversation ID
+        diarized_transcript: Processed transcript
+        filename: Original audio filename
+        audio_file_path: Path where audio was saved
+        transcript_file_path: Path where transcript was saved
+        audio_bytes: Raw audio bytes
+        event_name: Event name
+        location: Event location
+        ai_analysis: AI analysis results
+
+    Returns:
+        Tuple of (recording_id, transcription_id)
+    """
+    try:
+        # Check if conversation exists, create if not
+        result = await db.execute(
+            select(Conversation).where(Conversation.id == conversation_id)
+        )
+        conversation = result.scalar_one_or_none()
+
+        if not conversation:
+            # Create new conversation
+            conversation = Conversation(
+                id=conversation_id,
+                user_id="default_user",  # TODO: Get from auth context
+                title=event_name or filename.rsplit(".", 1)[0],
+                status="completed",
+                location=location,
+                event_name=event_name,
+                started_at=datetime.utcnow(),
+                ended_at=datetime.utcnow()
+            )
+            db.add(conversation)
+            await db.flush()
+
+        # Create AudioRecording entry
+        recording = AudioRecording(
+            conversation_id=conversation_id,
+            file_path=audio_file_path,
+            file_size=len(audio_bytes),
+            file_format=filename.split(".")[-1].lower(),
+            duration=diarized_transcript.total_duration,
+            original_filename=filename,
+            uploaded_from="ios_app",
+            processing_status="completed"
+        )
+        db.add(recording)
+        await db.flush()
+
+        # Create Transcription entry
+        formatted_text = _build_readable_transcript(diarized_transcript)
+        transcription = Transcription(
+            recording_id=recording.id,
+            conversation_id=conversation_id,
+            raw_text=formatted_text,
+            formatted_text=formatted_text,
+            speaker_count=diarized_transcript.speaker_count,
+            speaker_names=diarized_transcript.speaker_names,
+            segments=[
+                {
+                    "speaker_id": seg.speaker_id,
+                    "start_time": seg.start_time,
+                    "end_time": seg.end_time,
+                    "text": seg.text,
+                    "confidence": seg.confidence,
+                }
+                for seg in diarized_transcript.segments
+            ],
+            confidence_score=ai_analysis.get("confidence_score"),
+            sentiment=ai_analysis.get("sentiment"),
+            summary=ai_analysis.get("summary"),
+            entities=ai_analysis.get("entities", []),
+            action_items=ai_analysis.get("action_items", []),
+            transcript_file_path=transcript_file_path
+        )
+        db.add(transcription)
+        await db.flush()
+
+        # Create participants for each speaker
+        from sqlalchemy import delete
+        await db.execute(
+            delete(Participant).where(Participant.conversation_id == conversation_id)
+        )
+
+        for speaker_id, speaker_name in diarized_transcript.speaker_names.items():
+            participant = Participant(
+                conversation_id=conversation_id,
+                name=speaker_name,
+                consent_status="unknown"
+            )
+            db.add(participant)
+
+        await db.commit()
+        logger.info(f"Saved audio recording and transcription for {conversation_id}")
+        logger.info(f"  Recording ID: {recording.id}")
+        logger.info(f"  Transcription ID: {transcription.id}")
+
+        return recording.id, transcription.id
+
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error saving event audio with analysis: {e}")
+        raise

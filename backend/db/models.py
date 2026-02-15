@@ -75,6 +75,8 @@ class Conversation(Base):
     entities = relationship("Entity", back_populates="conversation", cascade="all, delete-orphan")
     action_items = relationship("ActionItem", back_populates="conversation", cascade="all, delete-orphan")
     privacy_logs = relationship("PrivacyAuditLog", back_populates="conversation", cascade="all, delete-orphan")
+    audio_recordings = relationship("AudioRecording", back_populates="conversation", cascade="all, delete-orphan")
+    transcriptions = relationship("Transcription", back_populates="conversation", cascade="all, delete-orphan")
 
 
 class Participant(Base):
@@ -249,14 +251,81 @@ class QAInteraction(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     session_id = Column(String, ForeignKey("qa_sessions.id"), nullable=False)
-    
+
     question = Column(Text, nullable=False)
     routed_agents = Column(JSON, default=list)  # List of agent names that were invoked
     responses = Column(JSON, default=dict)  # Dict mapping agent names to their responses
     final_answer = Column(Text, nullable=True)
     execution_time = Column(Float, nullable=True)  # Time in seconds
-    
+
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     session = relationship("QASession", back_populates="interactions")
+
+
+class AudioRecording(Base):
+    """Audio recording metadata and file references."""
+    __tablename__ = "audio_recordings"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False, index=True)
+
+    # File storage info
+    file_path = Column(String, nullable=False)  # Local or S3 path
+    file_size = Column(Integer, nullable=False)  # Bytes
+    file_format = Column(String, nullable=False)  # mp3, wav, m4a, etc.
+    duration = Column(Float, nullable=False)  # Seconds
+
+    # Metadata
+    original_filename = Column(String, nullable=False)
+    uploaded_from = Column(String, default="unknown")  # "ios_app", "web", "api"
+
+    # Processing status
+    processing_status = Column(String, default="pending")  # pending, processing, completed, failed
+    error_message = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    conversation = relationship("Conversation", back_populates="audio_recordings")
+    transcriptions = relationship("Transcription", back_populates="recording", cascade="all, delete-orphan")
+
+
+class Transcription(Base):
+    """Transcription of audio recording with speaker diarization."""
+    __tablename__ = "transcriptions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    recording_id = Column(String, ForeignKey("audio_recordings.id"), nullable=False, index=True)
+    conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False, index=True)
+
+    # Transcription content
+    raw_text = Column(Text, nullable=True)  # Full transcription text
+    formatted_text = Column(Text, nullable=True)  # Formatted with speaker labels
+
+    # Diarization data
+    speaker_count = Column(Integer, default=0)
+    speaker_names = Column(JSON, default=dict)  # {speaker_id: "Speaker Name"}
+    segments = Column(JSON, default=list)  # List of {speaker_id, start_time, end_time, text, confidence}
+
+    # Quality metrics
+    confidence_score = Column(Float, nullable=True)  # Average confidence 0-1
+    processing_time = Column(Float, nullable=True)  # Seconds to transcribe
+
+    # Storage
+    transcript_file_path = Column(String, nullable=True)  # Path to saved transcript
+
+    # AI Analysis results
+    entities = Column(JSON, default=list)  # Extracted entities
+    action_items = Column(JSON, default=list)  # Extracted action items
+    sentiment = Column(String, nullable=True)  # Overall sentiment
+    summary = Column(Text, nullable=True)  # AI-generated summary
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    recording = relationship("AudioRecording", back_populates="transcriptions")
+    conversation = relationship("Conversation", back_populates="transcriptions")

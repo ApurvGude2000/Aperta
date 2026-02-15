@@ -21,8 +21,11 @@ asyncpg==0.30.0  # PostgreSQL async driver (Python 3.13 compatible)
 psycopg2-binary==2.9.10  # PostgreSQL driver
 cloud-sql-python-connector[asyncpg]==1.11.0  # Cloud SQL connector
 
-# Google Cloud Storage
+# Google Cloud & OAuth
 google-cloud-storage==2.14.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.2.0
+google-auth>=2.25.0
 
 # Vector Store
 chromadb==0.4.22

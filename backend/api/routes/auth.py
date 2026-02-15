@@ -21,6 +21,7 @@ from auth.utils import (
     get_user_from_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+from auth.google_oauth import get_google_provider, GoogleTokenPayload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -325,3 +326,139 @@ async def get_current_user(
         )
 
     return UserResponse.from_orm(user)
+
+
+# Google OAuth endpoints
+
+class GoogleLoginRequest(BaseModel):
+    """Google OAuth login request."""
+    token: str  # Google ID token from frontend
+
+
+class GoogleLoginURL(BaseModel):
+    """Google login URL response."""
+    url: str
+
+
+@router.get("/google/login-url", response_model=GoogleLoginURL)
+async def get_google_login_url() -> GoogleLoginURL:
+    """
+    Get the Google OAuth login URL.
+
+    Frontend should redirect user to this URL.
+
+    Returns:
+        Google OAuth login URL
+    """
+    try:
+        provider = get_google_provider()
+        url = provider.get_google_login_url()
+
+        if not url:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Google OAuth is not configured"
+            )
+
+        return GoogleLoginURL(url=url)
+
+    except Exception as e:
+        logger.error(f"Error getting Google login URL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate Google login URL"
+        )
+
+
+@router.post("/google/login", response_model=LoginResponse)
+async def google_login(
+    request: GoogleLoginRequest,
+    db: AsyncSession = Depends(get_db_session)
+) -> LoginResponse:
+    """
+    Login or register user with Google OAuth token.
+
+    Args:
+        request: Google ID token from frontend
+        db: Database session
+
+    Returns:
+        User info and authentication tokens
+    """
+    try:
+        # Verify Google token
+        provider = get_google_provider()
+        payload = await provider.verify_token(request.token)
+
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Google token"
+            )
+
+        # Check if user exists
+        result = await db.execute(
+            select(User).where(User.email == payload.email)
+        )
+        user = result.scalar_one_or_none()
+
+        # Create user if doesn't exist
+        if not user:
+            logger.info(f"Creating new user from Google OAuth: {payload.email}")
+
+            # Generate username from email
+            username = payload.email.split("@")[0]
+            # Make username unique if needed
+            counter = 1
+            original_username = username
+            while True:
+                result = await db.execute(
+                    select(User).where(User.username == username)
+                )
+                if result.scalar_one_or_none() is None:
+                    break
+                username = f"{original_username}{counter}"
+                counter += 1
+
+            # Create new user
+            user = User(
+                email=payload.email,
+                username=username,
+                password_hash="",  # OAuth users don't have password
+                full_name=payload.name,
+                is_active=True,
+                is_verified=payload.email_verified
+            )
+
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.add(user)
+        await db.commit()
+
+        logger.info(f"User logged in via Google: {user.email}")
+
+        # Generate tokens
+        access_token = create_access_token({"sub": user.id})
+        refresh_token = create_refresh_token({"sub": user.id})
+
+        return LoginResponse(
+            user=UserResponse.from_orm(user),
+            tokens=TokenResponse(
+                access_token=access_token,
+                refresh_token=refresh_token
+            )
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during Google login: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google login failed"
+        )

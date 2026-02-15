@@ -17,11 +17,14 @@ export function Dashboard() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [askingQuestion, setAskingQuestion] = useState(false);
+  const [routedAgents, setRoutedAgents] = useState<string[]>([]);
+  const [executionTime, setExecutionTime] = useState<number>(0);
+  const [questionType, setQuestionType] = useState<string>('');
 
   const suggestedQuestions = [
-    'Who should I follow up with?',
-    'What were the key topics discussed?',
-    'Show me action items from this event',
+    'Who should I follow up with and what should I say?',
+    'What were the key topics discussed and what patterns do you see?',
+    'Compare my conversations - who had the most actionable discussion?',
   ];
 
   useEffect(() => {
@@ -71,9 +74,9 @@ export function Dashboard() {
     setAskingQuestion(true);
     setQuestion(questionText);
     setAnswer('');
-
-    console.log('[Dashboard] Asking question:', questionText);
-    console.log('[Dashboard] Selected event:', selectedEvent);
+    setRoutedAgents([]);
+    setExecutionTime(0);
+    setQuestionType('');
 
     try {
       const requestPayload = {
@@ -81,22 +84,16 @@ export function Dashboard() {
         conversation_id: selectedEvent !== 'all' ? selectedEvent : undefined,
         use_rag: true
       };
-      console.log('[Dashboard] Request payload:', requestPayload);
 
       const response = await api.askQuestion(requestPayload);
 
-      console.log('[Dashboard] Response received:', response);
-      console.log('[Dashboard] Final answer:', response.final_answer);
-      console.log('[Dashboard] Routed agents:', response.routed_agents);
-      console.log('[Dashboard] Execution time:', response.execution_time, 'seconds');
-      console.log('[Dashboard] Agent trace:', response.agent_trace);
-
       setAnswer(response.final_answer);
+      setRoutedAgents(response.routed_agents || []);
+      setExecutionTime(response.execution_time || 0);
+      setQuestionType(response.agent_trace?.routing?.question_type || '');
     } catch (error: any) {
-      console.error('[Dashboard] Error asking question:', error);
-      console.error('[Dashboard] Error response data:', error?.response?.data);
-      console.error('[Dashboard] Error status:', error?.response?.status);
       setAnswer(`Sorry, I encountered an error processing your question. ${error?.response?.data?.detail || error?.message || 'Please try again.'}`);
+      setRoutedAgents([]);
     } finally {
       setAskingQuestion(false);
     }
@@ -190,6 +187,40 @@ export function Dashboard() {
             {/* Answer Display */}
             {answer && (
               <div className="mt-4 p-4 bg-gradient-to-r from-[#1F3C88]/5 to-[#00C2FF]/5 rounded-lg border border-[#1F3C88]/20">
+                {/* Agent Trace Bar */}
+                {routedAgents.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-[#1F3C88]/10">
+                    <span className="text-xs font-medium text-[#6B7280]">Agents:</span>
+                    {routedAgents.map((agent, idx) => (
+                      <span
+                        key={idx}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          agent === 'conversation_retrieval' ? 'bg-blue-100 text-blue-700' :
+                          agent === 'insight' ? 'bg-purple-100 text-purple-700' :
+                          agent === 'followup' ? 'bg-green-100 text-green-700' :
+                          agent === 'recommendation' ? 'bg-orange-100 text-orange-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {agent === 'conversation_retrieval' ? 'Retrieval' :
+                         agent === 'followup' ? 'Follow-Up' :
+                         agent === 'insight' ? 'Insight' :
+                         agent === 'recommendation' ? 'Recommendation' :
+                         agent}
+                      </span>
+                    ))}
+                    {questionType && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#1F3C88]/10 text-[#1F3C88]">
+                        {questionType}
+                      </span>
+                    )}
+                    {executionTime > 0 && (
+                      <span className="text-xs text-[#9CA3AF] ml-auto">
+                        {executionTime.toFixed(1)}s
+                      </span>
+                    )}
+                  </div>
+                )}
                 <p className="text-sm font-medium text-[#1F3C88] mb-2">Answer:</p>
                 <p className="text-[#121417] whitespace-pre-wrap">{answer}</p>
               </div>

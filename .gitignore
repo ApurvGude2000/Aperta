@@ -32,7 +32,7 @@ backend/.env
 backend/.env.example
 backend/aperta-service-account.json
 backend/ENV_VARIABLES_GCP.txt
-
+backend/env.yaml
 # Database
 *.db
 *.sqlite

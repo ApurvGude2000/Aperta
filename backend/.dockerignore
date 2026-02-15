@@ -1,0 +1,11 @@
+env.yaml
+deploy.sh
+.env
+*.db
+aperta-service-account.json
+__pycache__
+.pytest_cache
+uploads/
+chroma_db/
+.vercel
+.git

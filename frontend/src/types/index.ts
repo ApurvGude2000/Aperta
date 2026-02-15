@@ -105,6 +105,15 @@ export interface AskQuestionResponse {
   routed_agents: string[];
   execution_time: number;
   timestamp: string;
+  agent_trace?: {
+    routing?: {
+      agents_needed?: string[];
+      execution_mode?: string;
+      question_type?: string;
+      reasoning?: string;
+    };
+    agent_results?: Record<string, any>;
+  };
 }
 
 export interface QASessionSummary {

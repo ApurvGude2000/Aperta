@@ -22,8 +22,8 @@ class GCSStorage:
         self.client = None
         self.bucket = None
 
-        if settings.gcp_service_account_json:
-            try:
+        try:
+            if settings.gcp_service_account_json:
                 credentials = service_account.Credentials.from_service_account_file(
                     settings.gcp_service_account_json
                 )
@@ -31,11 +31,15 @@ class GCSStorage:
                     credentials=credentials,
                     project=settings.gcp_project_id
                 )
-                self.bucket = self.client.bucket(self.bucket_name)
-                logger.info(f"GCS client initialized for bucket: {self.bucket_name}")
-            except Exception as e:
-                logger.error(f"Failed to initialize GCS client: {e}")
-                raise
+            else:
+                # For Cloud Run, use default credentials
+                self.client = storage.Client(project=settings.gcp_project_id)
+
+            self.bucket = self.client.bucket(self.bucket_name)
+            logger.info(f"GCS client initialized for bucket: {self.bucket_name}")
+        except Exception as e:
+            logger.error(f"Failed to initialize GCS client: {e}")
+            raise
 
     def upload_directory(self, local_dir: str, gcs_prefix: str = "chroma_db/") -> bool:
         """

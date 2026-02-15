@@ -311,6 +311,5 @@ export function EventDetail() {
           )}
         </main>
       </div>
-    </div>
   );
 }

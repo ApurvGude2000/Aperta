@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { ConversationResponse, AnalysisResult } from '../types';
+import { AudioTranscriptionViewer } from '../components/AudioTranscriptionViewer';
 
 export function ConversationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -15,10 +16,14 @@ export function ConversationDetail() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<any>(null);
+  const [transcriptionData, setTranscriptionData] = useState<any>(null);
+  const [loadingAudio, setLoadingAudio] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadConversation(id);
+      loadAudioData(id);
     }
   }, [id]);
 
@@ -32,6 +37,21 @@ export function ConversationDetail() {
       setError(err.response?.data?.detail || 'Failed to load conversation');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAudioData = async (conversationId: string) => {
+    try {
+      setLoadingAudio(true);
+      // Try to fetch audio and transcription data from the backend
+      // This would be an API call like: const data = await api.getAudioRecording(conversationId);
+      // For now, we'll leave this as a placeholder for when the API is ready
+      // setAudioData(data.audio);
+      // setTranscriptionData(data.transcription);
+    } catch (err: any) {
+      console.warn('Could not load audio data:', err.message);
+    } finally {
+      setLoadingAudio(false);
     }
   };
 
@@ -174,6 +194,16 @@ export function ConversationDetail() {
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
           <p>{error}</p>
         </div>
+      )}
+
+      {/* Audio & Transcription Viewer */}
+      {(audioData || transcriptionData) && (
+        <AudioTranscriptionViewer
+          audio={audioData}
+          transcription={transcriptionData}
+          conversationId={id || ''}
+          isLoading={loadingAudio}
+        />
       )}
 
       {/* Main Content Grid */}

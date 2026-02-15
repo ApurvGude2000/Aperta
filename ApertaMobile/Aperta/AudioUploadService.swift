@@ -10,7 +10,7 @@ class AudioUploadService: NSObject, ObservableObject {
     @Published var uploadError: String?
     @Published var uploadedConversationId: String?
 
-    private let baseURL = "http://localhost:8000" // Change to your actual backend URL
+    private let baseURL = "http://10.32.82.43:8000" // Mac's IP address on local network
     private var urlSession: URLSession
 
     private override init() {

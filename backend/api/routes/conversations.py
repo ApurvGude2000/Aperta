@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -227,13 +228,19 @@ async def get_conversation(
     """
     try:
         result = await db.execute(
-            select(Conversation).where(Conversation.id == conversation_id)
+            select(Conversation)
+            .where(Conversation.id == conversation_id)
+            .options(
+                selectinload(Conversation.participants),
+                selectinload(Conversation.entities),
+                selectinload(Conversation.action_items)
+            )
         )
         conversation = result.scalar_one_or_none()
-        
+
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
-        
+
         return _conversation_to_response(conversation)
         
     except HTTPException:
@@ -393,6 +400,14 @@ async def analyze_conversation(
 
 def _conversation_to_response(conversation: Conversation) -> ConversationResponse:
     """Convert a Conversation model to ConversationResponse."""
+    from sqlalchemy.inspection import inspect
+
+    # Check if relationships are loaded to avoid lazy loading in async context
+    insp = inspect(conversation)
+    participants_loaded = 'participants' not in insp.unloaded
+    entities_loaded = 'entities' not in insp.unloaded
+    action_items_loaded = 'action_items' not in insp.unloaded
+
     return ConversationResponse(
         id=conversation.id,
         user_id=conversation.user_id,
@@ -420,7 +435,7 @@ def _conversation_to_response(conversation: Conversation) -> ConversationRespons
                 lead_score=p.lead_score
             )
             for p in conversation.participants
-        ],
+        ] if participants_loaded else [],
         entities=[
             EntityResponse(
                 id=e.id,
@@ -430,7 +445,7 @@ def _conversation_to_response(conversation: Conversation) -> ConversationRespons
                 context=e.context
             )
             for e in conversation.entities
-        ],
+        ] if entities_loaded else [],
         action_items=[
             ActionItemResponse(
                 id=a.id,
@@ -440,5 +455,5 @@ def _conversation_to_response(conversation: Conversation) -> ConversationRespons
                 completed=a.completed
             )
             for a in conversation.action_items
-        ]
+        ] if action_items_loaded else []
     )

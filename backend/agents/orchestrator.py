@@ -173,6 +173,8 @@ class AgentOrchestrator:
             prompt = request.get("prompt")
             context = request.get("context")
 
+            logger.info(f"Orchestrator received request for {agent_name}: prompt_length={len(prompt) if prompt else 0} chars")
+
             # Get agent-specific parameters
             kwargs = {k: v for k, v in request.items()
                       if k not in ["agent_name", "prompt", "context"]}

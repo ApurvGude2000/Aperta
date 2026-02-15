@@ -11,13 +11,14 @@ from utils.logger import setup_logger
 import utils.console_logger as console_logger
 
 # Import agents
-from agents.intelligent_router import IntelligentRouter
-from agents.orchestrator import AgentOrchestrator
-from agents.perception import PerceptionAgent
-from agents.context_understanding import ContextUnderstandingAgent
-from agents.privacy_guardian import PrivacyGuardianAgent
-from agents.strategic_networking import StrategicNetworkingAgent
-from agents.follow_up import FollowUpAgent
+from agents import (
+    qa_orchestrator,
+    orchestrator,
+    ContextUnderstandingAgent,
+    PrivacyGuardianAgent,
+    FollowUpAgent,
+    CrossPollinationAgent
+)
 
 # Import services
 from services.rag_context import RAGContextManager
@@ -57,54 +58,91 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"RAG context manager failed: {e}")
         rag_manager = None
-    
+
     # Initialize agents (with graceful fallback)
     try:
-        perception_agent = PerceptionAgent()
         context_agent = ContextUnderstandingAgent()
         privacy_agent = PrivacyGuardianAgent()
-        strategic_agent = StrategicNetworkingAgent()
         followup_agent = FollowUpAgent()
+        crosspoll_agent = CrossPollinationAgent()
 
         logger.info("All agents initialized")
-        console_logger.log_info("All 5 agents initialized", "Startup")
+        console_logger.log_info("All 4 core agents initialized", "Startup")
 
         # Initialize orchestrator
-        agents = {
-            "PerceptionAgent": perception_agent,
-            "ContextUnderstandingAgent": context_agent,
-            "PrivacyGuardianAgent": privacy_agent,
-            "StrategicNetworkingAgent": strategic_agent,
-            "FollowUpAgent": followup_agent
-        }
-
-        orchestrator = AgentOrchestrator(agents)
-        logger.info("Orchestrator initialized")
-        console_logger.log_info("Orchestrator initialized", "Startup")
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_agent(context_agent)
+        orchestrator.register_agent(privacy_agent)
+        orchestrator.register_agent(followup_agent)
+        orchestrator.register_agent(crosspoll_agent)
+        logger.info("Orchestrator initialized with agents")
+        console_logger.log_info("Orchestrator initialized with agents", "Startup")
     except Exception as e:
         logger.warning(f"Agent initialization failed: {e}")
         orchestrator = None
 
-    # Initialize intelligent router (with graceful fallback)
+    # Q&A Orchestrator is already initialized globally
     try:
-        router = IntelligentRouter()
-        logger.info("Intelligent router initialized")
-        console_logger.log_info("Intelligent router initialized", "Startup")
+        logger.info("Q&A orchestrator ready")
+        console_logger.log_info("Q&A orchestrator ready", "Startup")
     except Exception as e:
-        logger.warning(f"Intelligent router failed: {e}")
-        router = None
+        logger.warning(f"Q&A orchestrator setup failed: {e}")
 
     # Set components in route modules
     try:
-        if router and orchestrator:
-            qa.set_qa_components(router, orchestrator, rag_manager)
+        if orchestrator and rag_manager:
+            qa.set_qa_components(qa_orchestrator, orchestrator, rag_manager)
         if orchestrator:
             conversations.set_conversation_orchestrator(orchestrator)
         logger.info("Route components configured")
         console_logger.log_info("Route components configured", "Startup")
     except Exception as e:
         logger.warning(f"Route configuration failed: {e}")
-    
+
+    # Sync data to GCS if enabled
+    if settings.use_gcs_for_chroma and settings.gcp_bucket_name:
+        try:
+            from utils.gcs_storage import get_gcs_storage
+            import os
+            gcs = get_gcs_storage()
+            if gcs:
+                # Auto-restore database from GCS if missing locally
+                db_file = "aperta.db"
+                if not os.path.exists(db_file):
+                    logger.info("Database not found locally, restoring from GCS...")
+                    console_logger.log_info("Restoring database from GCS backup", "Startup")
+                    try:
+                        from google.cloud import storage
+                        bucket = gcs.bucket
+                        blob = bucket.blob(f'backups/{db_file}')
+                        if blob.exists():
+                            blob.download_to_filename(db_file)
+                            logger.info("✓ Database restored from GCS")
+                            console_logger.log_info("✓ Database restored from GCS", "Startup")
+                        else:
+                            logger.warning("No database backup found in GCS, will create new DB")
+                    except Exception as e:
+                        logger.error(f"Failed to restore database from GCS: {e}")
+                # Sync ChromaDB
+                if os.path.exists(settings.chroma_persist_dir):
+                    logger.info("Syncing ChromaDB to GCS...")
+                    console_logger.log_info("Syncing ChromaDB to GCS bucket", "Startup")
+                    success = gcs.sync_to_gcs(settings.chroma_persist_dir, "chroma_db/")
+                    if success:
+                        logger.info("✓ ChromaDB synced to GCS")
+                        console_logger.log_info("✓ ChromaDB synced to GCS", "Startup")
+
+                # Backup SQLite database
+                db_file = "aperta.db"
+                if os.path.exists(db_file):
+                    logger.info("Backing up database to GCS...")
+                    console_logger.log_info("Backing up database to GCS", "Startup")
+                    success = gcs.backup_database_file(db_file, f"backups/{db_file}")
+                    if success:
+                        logger.info("✓ Database backed up to GCS")
+                        console_logger.log_info("✓ Database backed up to GCS", "Startup")
+        except Exception as e:
+            logger.error(f"Error syncing to GCS: {e}")
     console_logger.log_section("NetworkAI Backend Ready")
     logger.info("NetworkAI backend started successfully")
     

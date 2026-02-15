@@ -7,20 +7,29 @@ struct EventCreationView: View {
     @State private var showRecordingView = false
     @State private var createdEvent: Event?
     @State private var eventCreated = false
-    
+    @State private var showCreateForm = false
+    @State private var recentEvents: [Event] = []
+    @State private var showSettings = false
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .system
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 // Header
-                Text(eventCreated ? "Event Created" : "Create New Event")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top, 40)
+                if !showCreateForm && !eventCreated {
+                    // Welcome screen
+                    welcomeView
+                } else {
+                    Text(eventCreated ? "Event Created" : "Create New Event")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding(.top, 40)
+                }
                 
                 Spacer()
-                
-                if !eventCreated {
-                    // Form fields (before event creation)
+
+                if !eventCreated && showCreateForm {
+                    // Form fields (when creating event)
                     VStack(spacing: 20) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Event Name *")
@@ -47,50 +56,12 @@ struct EventCreationView: View {
                         }
                     }
                     .padding()
-                } else {
-                    // Show created event details
-                    VStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Event Name")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(eventName)
-                                .font(.title3)
-                                .bold()
-                        }
-                        
-                        if !eventLocation.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Location")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                HStack {
-                                    Image(systemName: "location.fill")
-                                    Text(eventLocation)
-                                        .font(.body)
-                                }
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Date")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(eventDate, style: .date)
-                                .font(.body)
-                        }
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
                 }
                 
                 Spacer()
-                
-                // Action button
-                if !eventCreated {
+
+                // Action buttons
+                if !eventCreated && showCreateForm {
                     // Create Event button
                     Button(action: {
                         createEvent()
@@ -105,8 +76,20 @@ struct EventCreationView: View {
                     }
                     .disabled(!canCreateEvent)
                     .padding(.horizontal)
+
+                    Button(action: {
+                        showCreateForm = false
+                    }) {
+                        Text("Cancel")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .foregroundColor(.primary)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
                     .padding(.bottom, 40)
-                } else {
+                } else if eventCreated {
                     // Start Recording button (only after event created)
                     Button(action: {
                         showRecordingView = true
@@ -144,16 +127,143 @@ struct EventCreationView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        showSettings = true
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.title3)
+                    }
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: PastEventsView()) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.title2)
+                        HStack(spacing: 6) {
+                            Image(systemName: "clock.arrow.circlepath")
+                            Text("Past Events")
+                                .font(.subheadline)
+                        }
                     }
                 }
             }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
+            .preferredColorScheme(appearanceMode.colorScheme)
+            .onAppear {
+                loadRecentEvents()
+            }
         }
     }
-    
+
+    // MARK: - Welcome View
+
+    private var welcomeView: some View {
+        VStack(spacing: 32) {
+            // App branding
+            VStack(spacing: 12) {
+                Image(systemName: "waveform.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundColor(.blue)
+
+                Text("Aperta")
+                    .font(.system(size: 44, weight: .bold))
+
+                Text("Record, transcribe, and master\nyour networking conversations")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, 60)
+
+            // Quick stats
+            if !recentEvents.isEmpty {
+                HStack(spacing: 40) {
+                    VStack {
+                        Text("\(recentEvents.count)")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.blue)
+                        Text("Events")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+
+                    VStack {
+                        Text("\(totalRecordings)")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.green)
+                        Text("Recordings")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding()
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(16)
+            }
+
+            Spacer()
+
+            // Action buttons
+            VStack(spacing: 16) {
+                Button(action: {
+                    showCreateForm = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Create New Event")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(12)
+                }
+
+                // Continue Last Event button (if available)
+                if let lastEvent = recentEvents.first {
+                    NavigationLink(destination: EventDetailView(event: lastEvent)) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.clockwise.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Continue Last Event")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                Text(lastEvent.name)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(12)
+                    }
+                }
+            }
+            .padding(.horizontal)
+
+            // Copyright footer
+            Text("Aperta 2026 All rights reserved")
+                .font(.caption2)
+                .foregroundColor(.gray.opacity(0.6))
+                .padding(.bottom, 20)
+        }
+    }
+
+    private var totalRecordings: Int {
+        recentEvents.reduce(0) { $0 + $1.recordings.count }
+    }
+
+    // MARK: - Computed Properties
+
     private var canCreateEvent: Bool {
         !eventName.isEmpty
     }
@@ -164,16 +274,35 @@ struct EventCreationView: View {
             location: eventLocation.isEmpty ? "No location" : eventLocation,
             date: eventDate
         )
+
+        // Save event to local storage
+        do {
+            try EventStorageManager.shared.saveEvent(event)
+            print("✅ Event saved successfully!")
+        } catch {
+            print("❌ Failed to save event: \(error)")
+        }
+
         createdEvent = event
         eventCreated = true
     }
     
+    private func loadRecentEvents() {
+        do {
+            recentEvents = try EventStorageManager.shared.loadAllEvents()
+        } catch {
+            print("❌ Failed to load recent events: \(error)")
+        }
+    }
+
     private func resetForm() {
         eventName = ""
         eventLocation = ""
         eventDate = Date()
         eventCreated = false
         createdEvent = nil
+        showCreateForm = false
+        loadRecentEvents()
     }
 }
 

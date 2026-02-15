@@ -11,7 +11,7 @@ import time
 
 from db.session import get_db_session
 from db.models import QASession, QAInteraction, Conversation
-from agents.intelligent_router import IntelligentRouter
+from agents.qa_orchestrator import QAOrchestrator
 from agents.orchestrator import AgentOrchestrator
 from services.rag_context import RAGContextManager
 from utils.logger import setup_logger
@@ -25,6 +25,7 @@ class AskQuestionRequest(BaseModel):
     question: str
     conversation_id: Optional[str] = None
     use_rag: bool = True
+    user_id: str = "default_user"
 
 
 class AskQuestionResponse(BaseModel):
@@ -35,6 +36,7 @@ class AskQuestionResponse(BaseModel):
     routed_agents: List[str]
     execution_time: float
     timestamp: datetime
+    agent_trace: Optional[Dict[str, Any]] = None
 
 
 class QASessionSummary(BaseModel):
@@ -62,19 +64,19 @@ class QASessionDetail(BaseModel):
 
 
 # Initialize components (will be set during app startup)
-router_instance: Optional[IntelligentRouter] = None
+qa_orchestrator_instance: Optional[QAOrchestrator] = None
 orchestrator_instance: Optional[AgentOrchestrator] = None
 rag_manager: Optional[RAGContextManager] = None
 
 
 def set_qa_components(
-    router: IntelligentRouter,
+    qa_orch: QAOrchestrator,
     orchestrator: AgentOrchestrator,
     rag: RAGContextManager
 ):
-    """Set the router, orchestrator, and RAG manager instances."""
-    global router_instance, orchestrator_instance, rag_manager
-    router_instance = router
+    """Set the Q&A orchestrator, orchestrator, and RAG manager instances."""
+    global qa_orchestrator_instance, orchestrator_instance, rag_manager
+    qa_orchestrator_instance = qa_orch
     orchestrator_instance = orchestrator
     rag_manager = rag
 
@@ -94,97 +96,63 @@ async def ask_question(
     Returns:
         Question answer with routing information
     """
-    if not router_instance or not orchestrator_instance:
+    if not qa_orchestrator_instance:
         raise HTTPException(
             status_code=500,
-            detail="Q&A components not initialized. Please check server startup."
+            detail="Q&A orchestrator not initialized. Please check server startup."
         )
-    
+
     start_time = time.time()
-    
+
     try:
         # Get or create QA session
-        # For now, create a new session for each question
-        # In production, you might want to group related questions
         session = QASession(
             conversation_id=request.conversation_id,
-            user_id="default_user"  # TODO: Get from auth context
+            user_id=request.user_id
         )
         db.add(session)
         await db.flush()
-        
-        # Load RAG context if requested and conversation exists
-        context = ""
-        if request.use_rag and request.conversation_id:
-            try:
-                # Get conversation transcript
-                result = await db.execute(
-                    select(Conversation).where(Conversation.id == request.conversation_id)
-                )
-                conversation = result.scalar_one_or_none()
-                
-                if conversation and conversation.transcript:
-                    if rag_manager:
-                        context = await rag_manager.get_relevant_context(
-                            query=request.question,
-                            conversation_id=request.conversation_id
-                        )
-                    else:
-                        # Fallback: use full transcript
-                        context = conversation.transcript
-            except Exception as e:
-                logger.warning(f"Failed to load RAG context: {e}")
-        
-        # Build full query with context
-        full_query = request.question
-        if context:
-            full_query = f"Context:\n{context}\n\nQuestion: {request.question}"
-        
-        # Route the question to appropriate agents
-        routing_decision = await router_instance.route_query(
-            query=full_query,
-            conversation_id=request.conversation_id
+
+        # Use the new QA orchestrator to answer the question
+        logger.info(f"Processing question: {request.question}")
+        result = await qa_orchestrator_instance.answer_question(
+            user_question=request.question,
+            user_id=request.user_id
         )
-        
-        # Execute agents via orchestrator
-        orchestration_result = await orchestrator_instance.execute_agents(
-            query=full_query,
-            selected_agents=routing_decision["selected_agents"],
-            conversation_id=request.conversation_id,
-            context=context
-        )
-        
-        # Extract responses
-        agent_responses = {}
-        for agent_result in orchestration_result["agent_results"]:
-            agent_name = agent_result["agent"]
-            agent_responses[agent_name] = agent_result.get("result", "")
-        
-        # Synthesize final answer from agent responses
-        final_answer = _synthesize_answer(orchestration_result["agent_results"])
-        
-        execution_time = time.time() - start_time
-        
+
+        # Extract results
+        final_answer = result.get("answer", "Unable to process your question.")
+        agent_trace = result.get("agent_trace", {})
+        execution_time = result.get("execution_time_ms", 0) / 1000.0  # Convert to seconds
+
+        # Get routed agents from trace
+        routing_info = agent_trace.get("routing", {})
+        routed_agents = routing_info.get("agents_needed", [])
+
+        # Get agent responses from trace
+        agent_results = agent_trace.get("agent_results", {})
+
         # Store interaction
         interaction = QAInteraction(
             session_id=session.id,
             question=request.question,
-            routed_agents=routing_decision["selected_agents"],
-            responses=agent_responses,
+            routed_agents=routed_agents,
+            responses=agent_results,
             final_answer=final_answer,
             execution_time=execution_time
         )
         db.add(interaction)
         await db.commit()
-        
+
         return AskQuestionResponse(
             session_id=session.id,
             interaction_id=interaction.id,
             question=request.question,
             final_answer=final_answer,
-            routed_agents=routing_decision["selected_agents"],
+            routed_agents=routed_agents,
             execution_time=execution_time,
-            timestamp=interaction.timestamp
+            timestamp=interaction.timestamp,
+            agent_trace=agent_trace
         )
         
     except Exception as e:
@@ -366,9 +334,9 @@ def _synthesize_answer(agent_results: List[Dict[str, Any]]) -> str:
     # Simple synthesis: concatenate non-empty results
     answers = []
     for result in agent_results:
-        agent_name = result.get("agent", "Unknown")
-        response = result.get("result", "")
-        
+        agent_name = result.get("agent_name") or result.get("agent", "Unknown")
+        response = result.get("response", "")
+
         if response and isinstance(response, str) and response.strip():
             answers.append(f"**{agent_name}:**\n{response.strip()}")
     

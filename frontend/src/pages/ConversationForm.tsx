@@ -3,37 +3,37 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createConversation, getConversation, updateConversation } from '../api/client';
-import type { Conversation } from '../types';
+import { api } from '../api/client';
+import type { ConversationCreate, ConversationUpdate } from '../types';
 
-export default function ConversationForm() {
+export function ConversationForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
 
   const [title, setTitle] = useState('');
   const [transcript, setTranscript] = useState('');
-  const [metadata, setMetadata] = useState<Record<string, any>>({
-    date: new Date().toISOString().split('T')[0],
-    location: '',
-    participants: '',
-  });
+  const [location, setLocation] = useState('');
+  const [eventName, setEventName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(isEditing);
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && id) {
       loadConversation();
     }
   }, [id]);
 
   const loadConversation = async () => {
+    if (!id) return;
+
     try {
-      const conversation = await getConversation(Number(id));
-      setTitle(conversation.title);
-      setTranscript(conversation.transcript);
-      setMetadata(conversation.metadata || {});
+      const conversation = await api.getConversation(id);
+      setTitle(conversation.title || '');
+      setTranscript(conversation.transcript || '');
+      setLocation(conversation.location || '');
+      setEventName(conversation.event_name || '');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load conversation');
     } finally {
@@ -47,28 +47,31 @@ export default function ConversationForm() {
     setError(null);
 
     try {
-      const conversationData = {
-        title,
-        transcript,
-        metadata,
-      };
-
-      if (isEditing) {
-        await updateConversation(Number(id), conversationData);
+      if (isEditing && id) {
+        const updateData: ConversationUpdate = {
+          title: title.trim() || undefined,
+          transcript: transcript.trim(),
+          location: location.trim() || undefined,
+          event_name: eventName.trim() || undefined,
+        };
+        await api.updateConversation(id, updateData);
       } else {
-        await createConversation(conversationData);
+        const createData: ConversationCreate = {
+          title: title.trim() || undefined,
+          transcript: transcript.trim(),
+          location: location.trim() || undefined,
+          event_name: eventName.trim() || undefined,
+          started_at: new Date().toISOString(),
+        };
+        await api.createConversation(createData);
       }
 
-      navigate('/conversations');
+      navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || `Failed to ${isEditing ? 'update' : 'create'} conversation`);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleMetadataChange = (key: string, value: string) => {
-    setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
   if (initialLoading) {
@@ -86,7 +89,7 @@ export default function ConversationForm() {
           {isEditing ? 'Edit Conversation' : 'New Conversation'}
         </h1>
         <button
-          onClick={() => navigate('/conversations')}
+          onClick={() => navigate('/')}
           className="text-gray-600 hover:text-gray-900 font-medium"
         >
           Cancel
@@ -103,7 +106,7 @@ export default function ConversationForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium mb-2">
-            Title *
+            Title
           </label>
           <input
             type="text"
@@ -112,7 +115,6 @@ export default function ConversationForm() {
             onChange={(e) => setTitle(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="e.g., Career Fair Networking Session"
-            required
           />
         </div>
 
@@ -136,21 +138,8 @@ export default function ConversationForm() {
 
         <div className="border-t pt-6">
           <h2 className="text-lg font-semibold mb-4">Metadata (Optional)</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium mb-2">
-                Date
-              </label>
-              <input
-                type="date"
-                id="date"
-                value={metadata.date || ''}
-                onChange={(e) => handleMetadataChange('date', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
 
+          <div className="space-y-4">
             <div>
               <label htmlFor="location" className="block text-sm font-medium mb-2">
                 Location
@@ -158,42 +147,25 @@ export default function ConversationForm() {
               <input
                 type="text"
                 id="location"
-                value={metadata.location || ''}
-                onChange={(e) => handleMetadataChange('location', e.target.value)}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="e.g., Tech Conference, Virtual Meeting"
               />
             </div>
 
             <div>
-              <label htmlFor="participants" className="block text-sm font-medium mb-2">
-                Participants
+              <label htmlFor="eventName" className="block text-sm font-medium mb-2">
+                Event Name
               </label>
               <input
                 type="text"
-                id="participants"
-                value={metadata.participants || ''}
-                onChange={(e) => handleMetadataChange('participants', e.target.value)}
+                id="eventName"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., John Doe, Jane Smith"
+                placeholder="e.g., Tech Meetup 2024, Career Fair"
               />
-            </div>
-
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium mb-2">
-                Tags
-              </label>
-              <input
-                type="text"
-                id="tags"
-                value={metadata.tags || ''}
-                onChange={(e) => handleMetadataChange('tags', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., networking, career, tech"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Separate tags with commas
-              </p>
             </div>
           </div>
         </div>
@@ -201,14 +173,14 @@ export default function ConversationForm() {
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={loading || !title.trim() || !transcript.trim()}
+            disabled={loading || !transcript.trim()}
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {loading ? 'Saving...' : isEditing ? 'Update Conversation' : 'Create Conversation'}
           </button>
           <button
             type="button"
-            onClick={() => navigate('/conversations')}
+            onClick={() => navigate('/')}
             className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
             Cancel

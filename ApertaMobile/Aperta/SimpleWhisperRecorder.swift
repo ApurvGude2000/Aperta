@@ -16,6 +16,8 @@ public class SimpleWhisperRecorder: ObservableObject {
     @Published public private(set) var modelLoadingProgress: Double = 0
     @Published public private(set) var isModelLoaded = false
     @Published public private(set) var error: String?
+    @Published public private(set) var audioLevel: Float = 0
+    @Published public private(set) var recordingDuration: TimeInterval = 0
 
     // MARK: - Private Properties
     private var audioEngine: AVAudioEngine?
@@ -23,6 +25,8 @@ public class SimpleWhisperRecorder: ObservableObject {
     private var recordingFile: AVAudioFile?
     private var currentRecordingURL: URL?
     private let audioProcessor = AudioProcessor()
+    private var recordingStartTime: Date?
+    private var timerCancellable: AnyCancellable?
 
     // Audio format - Whisper requires 16kHz mono
     private let sampleRate: Double = 16000
@@ -119,6 +123,11 @@ public class SimpleWhisperRecorder: ObservableObject {
             inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                 guard let self, let recordingFile, let converter else { return }
 
+                // Calculate audio level (RMS)
+                Task { @MainActor in
+                    self.audioLevel = self.calculateAudioLevel(buffer: buffer)
+                }
+
                 // Convert to target format
                 let frameCapacity = AVAudioFrameCount(outputFormat.sampleRate) * buffer.frameLength / AVAudioFrameCount(inputFormat.sampleRate)
                 guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: frameCapacity) else { return }
@@ -138,6 +147,10 @@ public class SimpleWhisperRecorder: ObservableObject {
             audioEngine.prepare()
             try audioEngine.start()
             isRecording = true
+
+            // Start timer
+            recordingStartTime = Date()
+            startTimer()
 
         } catch {
             self.error = "Recording failed: \(error.localizedDescription)"
@@ -180,6 +193,10 @@ public class SimpleWhisperRecorder: ObservableObject {
         audioEngine?.inputNode.removeTap(onBus: 0)
         isRecording = false
         isPaused = false
+
+        // Stop timer
+        stopTimer()
+        audioLevel = 0
 
         guard let recordingURL = currentRecordingURL else {
             throw RecorderError.noRecordingFound
@@ -239,9 +256,49 @@ public class SimpleWhisperRecorder: ObservableObject {
         }
     }
 
+    // MARK: - Audio Level Monitoring
+
+    private func calculateAudioLevel(buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+        let channelDataValue = channelData.pointee
+        let frameLength = Int(buffer.frameLength)
+
+        // Calculate RMS (Root Mean Square) for audio level
+        var sum: Float = 0
+        for i in 0..<frameLength {
+            let sample = channelDataValue[i]
+            sum += sample * sample
+        }
+
+        let rms = sqrt(sum / Float(frameLength))
+
+        // Normalize to 0-1 range (typical speech is around 0.1-0.3)
+        let normalized = min(rms * 10, 1.0)
+        return normalized
+    }
+
+    private func startTimer() {
+        timerCancellable = Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self, let startTime = self.recordingStartTime else { return }
+                if !self.isPaused {
+                    self.recordingDuration = Date().timeIntervalSince(startTime)
+                }
+            }
+    }
+
+    private func stopTimer() {
+        timerCancellable?.cancel()
+        timerCancellable = nil
+        recordingDuration = 0
+        recordingStartTime = nil
+    }
+
     // MARK: - Cleanup
 
     public func cleanup() {
+        stopTimer()
         audioEngine?.stop()
         audioEngine = nil
 

@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # HuggingFace Token (required for Pyannote speaker diarization)
     hf_token: Optional[str] = None
 
+    # Perplexity API Configuration (for Cross-Pollination Agent)
+    perplexity_api_key: Optional[str] = None
+
     # Fetch.ai Configuration
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None
@@ -56,9 +59,22 @@ class Settings(BaseSettings):
     supabase_key: Optional[str] = None  # Anon public key
     supabase_db_password: Optional[str] = None  # Database password for direct connection
 
+    # Cloud SQL Configuration (optional - for GCP Cloud SQL)
+    gcp_project_id: Optional[str] = None
+    gcp_region: Optional[str] = "us-central1"
+    cloud_sql_instance_connection_name: Optional[str] = None  # project:region:instance
+    cloud_sql_database_name: Optional[str] = "aperta_db"
+    cloud_sql_user: Optional[str] = "postgres"
+    cloud_sql_password: Optional[str] = None
+
     # ChromaDB Configuration
     chroma_persist_dir: str = "./chroma_db"
     chroma_collection_name: str = "networkai_documents"
+
+    # GCS Configuration (for ChromaDB persistence)
+    gcp_bucket_name: Optional[str] = None
+    gcp_service_account_json: Optional[str] = None  # Path to service account JSON file
+    use_gcs_for_chroma: bool = False
 
     # Application Configuration
     app_name: str = "NetworkAI"

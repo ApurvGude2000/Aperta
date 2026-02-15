@@ -330,8 +330,16 @@ struct RecordingView: View {
                                         // CRITICAL: Run PII redaction BEFORE upload
                                         uploadStatus = "Redacting PII..."
                                         print("🔒 Running PII Guardian on transcript...")
-                                        let redactedTranscript = await LLMModelManager.shared.redactPII(from: recordingData.transcript)
-                                        print("🔒 PII redaction complete (\(redactedTranscript.count) chars)")
+
+                                        let redactedTranscript: String
+                                        do {
+                                            redactedTranscript = try await LLMModelManager.shared.redactPII(from: recordingData.transcript)
+                                            print("🔒 PII redaction complete (\(redactedTranscript.count) chars)")
+                                        } catch {
+                                            // If PII redaction fails, use original transcript (better than no upload)
+                                            print("⚠️ PII redaction failed: \(error), using original transcript")
+                                            redactedTranscript = recordingData.transcript
+                                        }
 
                                         // Auto-upload redacted transcript (NO audio file for privacy)
                                         uploadStatus = "Uploading to cloud..."

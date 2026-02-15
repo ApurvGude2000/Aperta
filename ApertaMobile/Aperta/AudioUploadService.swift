@@ -138,6 +138,9 @@ class AudioUploadService: NSObject, ObservableObject {
         eventName: String,
         location: String? = nil
     ) async -> Result<TranscriptUploadResponse, AudioUploadError> {
+        print("🚀 uploadTranscriptOnly CALLED - event: \(eventName), text length: \(transcriptText.count)")
+        print("🌐 URL: \(baseURL)/audio/append-transcript")
+
         do {
             // Build request
             var request = URLRequest(url: URL(string: "\(baseURL)/audio/append-transcript")!)
@@ -177,21 +180,27 @@ class AudioUploadService: NSObject, ObservableObject {
             }
 
             // Perform request
+            print("📡 Making HTTP request NOW...")
             let (responseData, response) = try await urlSession.data(for: request)
+            print("📡 Got response!")
 
             // Check response
             guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Invalid response type")
                 return .failure(.invalidResponse)
             }
+            print("📊 HTTP Status: \(httpResponse.statusCode)")
 
             if httpResponse.statusCode != 200 {
                 let errorMessage = String(data: responseData, encoding: .utf8) ?? "Unknown error"
+                print("❌ Server error: \(errorMessage)")
                 return .failure(.serverError(errorMessage))
             }
 
             // Decode response
             let decoder = JSONDecoder()
             let uploadResponse = try decoder.decode(TranscriptUploadResponse.self, from: responseData)
+            print("✅ Decoded response successfully")
 
             // Update UI
             DispatchQueue.main.async {
@@ -203,6 +212,8 @@ class AudioUploadService: NSObject, ObservableObject {
             return .success(uploadResponse)
 
         } catch {
+            print("❌ uploadTranscriptOnly FAILED with error: \(error)")
+            print("❌ Error type: \(type(of: error))")
             DispatchQueue.main.async {
                 self.isUploading = false
                 self.uploadError = error.localizedDescription

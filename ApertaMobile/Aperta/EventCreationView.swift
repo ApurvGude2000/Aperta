@@ -161,18 +161,25 @@ struct EventCreationView: View {
     private var welcomeView: some View {
         VStack(spacing: 32) {
             // App branding
-            VStack(spacing: 12) {
-                Image(systemName: "waveform.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.blue)
+            VStack(spacing: 16) {
+                Image("aperta-logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 100)
 
-                Text("Aperta")
-                    .font(.system(size: 44, weight: .bold))
+                VStack(spacing: 4) {
+                    Text("Agent Echo")
+                        .font(.system(size: 36, weight: .bold))
+                    Text("by Aperta")
+                        .font(.title3)
+                        .foregroundColor(.gray)
+                }
 
                 Text("Record, transcribe, and master\nyour networking conversations")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
+                    .padding(.top, 4)
             }
             .padding(.top, 60)
 

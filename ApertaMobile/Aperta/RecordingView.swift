@@ -14,6 +14,8 @@ struct RecordingView: View {
     @State private var showDeleteConfirmation = false
     @State private var showRenameDialog = false
     @State private var uploadStatus = ""
+    @State private var showUploadResult = false
+    @State private var uploadResultMessage = ""
     @Environment(\.dismiss) private var dismiss
 
     init(event: Event, onEndEvent: @escaping () -> Void) {
@@ -290,9 +292,12 @@ struct RecordingView: View {
                             // Stop & Save button
                             Button(action: {
                                 Task {
+                                    print("🛑 STOP & SAVE BUTTON PRESSED")
                                     do {
                                         // Get recording data
+                                        print("📼 Getting recording data...")
                                         let recordingData = try await recorder.stopRecordingAndGetData()
+                                        print("📼 Got recording data: \(recordingData.transcript.count) chars")
 
                                         // Generate default recording name
                                         let recordingNumber = currentEvent.recordings.count + 1
@@ -315,7 +320,9 @@ struct RecordingView: View {
                                         updatedEvent.recordings.append(newRecording)
 
                                         // Save updated event
+                                        print("💾 Saving to local storage...")
                                         try EventStorageManager.shared.saveEvent(updatedEvent)
+                                        print("💾 Saved successfully!")
 
                                         // Update current event state
                                         currentEvent = updatedEvent
@@ -327,35 +334,35 @@ struct RecordingView: View {
                                         print("🎵 Audio saved at: \(recordingData.audioFilePath)")
                                         print("📊 Event now has \(currentEvent.recordings.count) recording(s)")
 
-                                        // CRITICAL: Run PII redaction BEFORE upload
-                                        uploadStatus = "Redacting PII..."
-                                        print("🔒 Running PII Guardian on transcript...")
+                                        // SET STATUS FIRST - this should show on screen
+                                        uploadStatus = "🚀 ABOUT TO UPLOAD - YOU SHOULD SEE THIS!"
 
-                                        let redactedTranscript: String
-                                        do {
-                                            redactedTranscript = try await LLMModelManager.shared.redactPII(from: recordingData.transcript)
-                                            print("🔒 PII redaction complete (\(redactedTranscript.count) chars)")
-                                        } catch {
-                                            // If PII redaction fails, use original transcript (better than no upload)
-                                            print("⚠️ PII redaction failed: \(error), using original transcript")
-                                            redactedTranscript = recordingData.transcript
-                                        }
+                                        // Wait a moment so user can see it
+                                        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
 
-                                        // Auto-upload redacted transcript (NO audio file for privacy)
-                                        uploadStatus = "Uploading to cloud..."
+                                        // TEMPORARY: Skip PII redaction for debugging
+                                        uploadStatus = "🚀 NOW CALLING UPLOAD..."
+                                        print("📤 Starting upload to backend...")
+                                        print("📝 Transcript length: \(recordingData.transcript.count) chars")
+                                        print("🏷️ Event name: \(event.name)")
+
                                         let result = await uploadService.uploadTranscriptOnly(
-                                            transcriptText: redactedTranscript,
+                                            transcriptText: recordingData.transcript,
                                             eventName: event.name,
                                             location: event.location
                                         )
 
                                         switch result {
                                         case .success(let response):
-                                            uploadStatus = "✓ Uploaded (PII-protected)"
+                                            uploadStatus = "✅ SUCCESS: \(response.transcript_file_path)"
+                                            uploadResultMessage = "Upload successful!\n\(response.transcript_file_path)"
+                                            showUploadResult = true
                                             print("✅ Upload successful: \(response.message)")
                                             print("📄 Saved to: \(response.transcript_file_path)")
                                         case .failure(let error):
-                                            uploadStatus = "✗ Upload failed: \(error.localizedDescription)"
+                                            uploadStatus = "❌ FAILED: \(error.localizedDescription)"
+                                            uploadResultMessage = "Upload FAILED:\n\(error.localizedDescription)"
+                                            showUploadResult = true
                                             print("❌ Upload failed: \(error)")
                                         }
 
@@ -413,10 +420,14 @@ struct RecordingView: View {
                     }
                 }
 
-                if !uploadStatus.isEmpty && !uploadService.isUploading {
+                // ALWAYS show upload status if not empty
+                if !uploadStatus.isEmpty {
                     Text(uploadStatus)
-                        .font(.caption)
-                        .foregroundColor(uploadStatus.starts(with: "✓") ? .green : .red)
+                        .font(.headline)
+                        .foregroundColor(uploadStatus.contains("✅") ? .green : uploadStatus.contains("❌") ? .red : .blue)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(8)
                 }
             }
         }
@@ -427,8 +438,8 @@ struct RecordingView: View {
                 // Load Whisper model for transcription
                 try await recorder.loadModel(variant: "small")
 
-                // Load PII Guardian for privacy protection
-                try await LLMModelManager.shared.loadModel()
+                // TEMPORARY: Skip PII model loading for debugging
+                // try await LLMModelManager.shared.loadModel()
             } catch {
                 showError = true
             }
@@ -437,6 +448,11 @@ struct RecordingView: View {
             Button("OK") { showError = false }
         } message: {
             Text(recorder.error ?? "Unknown error")
+        }
+        .alert("Upload Result", isPresented: $showUploadResult) {
+            Button("OK") { showUploadResult = false }
+        } message: {
+            Text(uploadResultMessage)
         }
         .alert("Delete Recording", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {

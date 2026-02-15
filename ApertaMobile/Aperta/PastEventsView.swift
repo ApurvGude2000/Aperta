@@ -405,6 +405,21 @@ struct EventDetailView: View {
 
             print("✅ File transcribed and saved: \(newRecording.name)")
 
+            // Upload transcript to GCS
+            print("📤 Uploading transcript to cloud...")
+            let uploadResult = await AudioUploadService.shared.uploadTranscriptOnly(
+                transcriptText: protectedTranscript,
+                eventName: displayEvent.name,
+                location: displayEvent.location
+            )
+
+            switch uploadResult {
+            case .success(let response):
+                print("✅ Transcript uploaded to GCS: \(response.transcript_file_path)")
+            case .failure(let error):
+                print("⚠️ Transcript upload failed (file still saved locally): \(error.localizedDescription)")
+            }
+
             // Wait a moment to show completion
             try await Task.sleep(nanoseconds: 500_000_000)
             isTranscribing = false

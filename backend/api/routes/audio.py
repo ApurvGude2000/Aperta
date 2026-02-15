@@ -7,21 +7,22 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
 import logging
 import numpy as np
-import librosa
 import uuid
 import json
+import librosa
 
 from db.session import get_db_session
 from db.models import Conversation, Participant, AudioRecording, Transcription
-from services.audio_processor import AudioProcessor, DiarizedTranscript
 from services.storage import StorageService, StorageConfig
 from config import settings
 from utils.logger import setup_logger
-from agents import ContextUnderstandingAgent, PrivacyGuardianAgent
+
+if TYPE_CHECKING:
+    from services.audio_processor import DiarizedTranscript
 
 logger = setup_logger(__name__)
 router = APIRouter(prefix="/audio", tags=["Audio Processing"])
@@ -118,15 +119,16 @@ class StorageInfo(BaseModel):
 
 
 # Initialize audio processor (lazy loaded)
-audio_processor_instance: Optional[AudioProcessor] = None
+audio_processor_instance: Optional = None
 storage_instance: Optional[StorageService] = None
 
 
-def get_audio_processor() -> AudioProcessor:
-    """Get or initialize the audio processor."""
+def get_audio_processor():
+    """Get or initialize the audio processor (lazy import)."""
     global audio_processor_instance
     if audio_processor_instance is None:
         logger.info("Initializing audio processor...")
+        from services.audio_processor import AudioProcessor
         audio_processor_instance = AudioProcessor()
     return audio_processor_instance
 
@@ -688,15 +690,21 @@ async def _load_audio_file_from_bytes(content: bytes) -> tuple[np.ndarray, int]:
     Returns:
         Tuple of (audio_data, sample_rate)
     """
+    import tempfile
+    import os
+
+    temp_file = None
     try:
-        import io
+        # Save to temp file so librosa can detect format
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.audio') as f:
+            f.write(content)
+            temp_file = f.name
 
         # Load with librosa (handles multiple formats)
         # target_sr=16000 for ASR models
         # mono=True for speaker diarization
-        # Need to wrap bytes in BytesIO for librosa.load()
         audio_data, sample_rate = librosa.load(
-            io.BytesIO(content),
+            temp_file,
             sr=16000,
             mono=True
         )
@@ -714,12 +722,19 @@ async def _load_audio_file_from_bytes(content: bytes) -> tuple[np.ndarray, int]:
     except Exception as e:
         logger.error(f"Error loading audio file: {e}")
         raise HTTPException(status_code=400, detail=f"Error loading audio file: {str(e)}")
+    finally:
+        # Clean up temp file
+        if temp_file and os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except:
+                pass
 
 
 async def _save_conversation(
     db: AsyncSession,
     conversation_id: str,
-    diarized_transcript: DiarizedTranscript,
+    diarized_transcript: "DiarizedTranscript",
     filename: str,
     audio_file_path: Optional[str],
     transcript_file_path: str,
@@ -800,7 +815,7 @@ async def _save_conversation(
         raise
 
 
-def _build_readable_transcript(diarized: DiarizedTranscript) -> str:
+def _build_readable_transcript(diarized: "DiarizedTranscript") -> str:
     """
     Build human-readable transcript from diarized segments.
 
@@ -884,7 +899,7 @@ Transcript:
 async def _save_event_audio_with_analysis(
     db: AsyncSession,
     conversation_id: str,
-    diarized_transcript: DiarizedTranscript,
+    diarized_transcript: "DiarizedTranscript",
     filename: str,
     audio_file_path: Optional[str],
     transcript_file_path: str,

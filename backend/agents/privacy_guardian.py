@@ -183,3 +183,33 @@ async def redact_pii(text: str) -> str:
     """
     agent = PrivacyGuardianAgent()
     return await agent.redact_transcript(text)
+
+
+# Allow running as script for testing
+if __name__ == "__main__":
+    import asyncio
+    import sys
+
+    # Fix imports when running as script
+    sys.path.insert(0, '/Users/jedrzejcader/echopear/Aperta/backend')
+
+    async def test():
+        """Test the privacy guardian with sample text."""
+        agent = PrivacyGuardianAgent()
+
+        test_text = """
+        My name is John Doe and you can reach me at john.doe@email.com or
+        call me at 555-123-4567. I live at 123 Main Street, New York, NY.
+        My SSN is 123-45-6789 and my credit card is 4532-1234-5678-9012.
+        """
+
+        print("Original text:")
+        print(test_text)
+        print("\n" + "="*60 + "\n")
+
+        redacted = await agent.redact_transcript(test_text)
+
+        print("Redacted text:")
+        print(redacted)
+
+    asyncio.run(test())

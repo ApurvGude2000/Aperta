@@ -22,19 +22,23 @@ struct Event: Identifiable, Codable {
 /// Represents a single recording within an event
 struct Recording: Identifiable, Codable {
     let id: UUID
+    var name: String
     var transcript: String
     var segments: [TranscriptSegment]
+    var audioFilePath: String?  // Path to saved audio file
     var startTime: Date
     var endTime: Date?
-    
-    init(id: UUID = UUID(), transcript: String = "", segments: [TranscriptSegment] = [], startTime: Date = Date()) {
+
+    init(id: UUID = UUID(), name: String = "", transcript: String = "", segments: [TranscriptSegment] = [], audioFilePath: String? = nil, startTime: Date = Date()) {
         self.id = id
+        self.name = name
         self.transcript = transcript
         self.segments = segments
+        self.audioFilePath = audioFilePath
         self.startTime = startTime
         self.endTime = nil
     }
-    
+
     var duration: TimeInterval? {
         guard let endTime else { return nil }
         return endTime.timeIntervalSince(startTime)

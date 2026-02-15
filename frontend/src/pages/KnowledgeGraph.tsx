@@ -41,7 +41,7 @@ export function KnowledgeGraph() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const fgRef = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -60,8 +60,11 @@ export function KnowledgeGraph() {
   }, []);
 
   useEffect(() => {
-    fetchGraphData();
-  }, []);
+    // Only fetch data after we have valid dimensions
+    if (dimensions.width > 0 && dimensions.height > 0) {
+      fetchGraphData();
+    }
+  }, [dimensions]);
 
   const fetchGraphData = async () => {
     try {
@@ -75,12 +78,12 @@ export function KnowledgeGraph() {
       console.log('Fetched data:', { nodes: data.nodes.length, edges: data.edges.length });
       console.log('Dimensions:', dimensions);
 
-      // Position nodes in CIRCLE around CENTER of screen
-      const width = Math.max(dimensions.width, 1400);
-      const height = Math.max(dimensions.height, 900);
+      // Position nodes in CIRCLE around CENTER of ACTUAL visible area
+      const width = dimensions.width;
+      const height = dimensions.height;
       const centerX = width / 2;
       const centerY = height / 2;
-      const radius = Math.min(width, height) * 0.3; // 30% of smaller dimension
+      const radius = Math.min(width, height) * 0.35; // 35% of smaller dimension
 
       const nodes = data.nodes.map((node, i) => {
         // Arrange in circle around center

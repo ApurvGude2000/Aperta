@@ -2,6 +2,11 @@
 // ABOUTME: Sets up React Router for navigation between pages
 
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Landing } from './pages/Landing';
+import { Dashboard } from './pages/Dashboard';
+import { Events } from './pages/Events';
+import { EventDetail } from './pages/EventDetail';
+import { KnowledgeGraph } from './pages/KnowledgeGraph';
 import { ConversationList } from './pages/ConversationList';
 import { ConversationDetail } from './pages/ConversationDetail';
 import { ConversationForm } from './pages/ConversationForm';
@@ -57,16 +62,21 @@ function Navigation() {
 export function App() {
   return (
     <BrowserRouter>
-      <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<ConversationList />} />
-          <Route path="/conversations/new" element={<ConversationForm />} />
-          <Route path="/conversations/:id" element={<ConversationDetail />} />
-          <Route path="/conversations/:id/edit" element={<ConversationForm />} />
-          <Route path="/ask" element={<AskQuestions />} />
-        </Routes>
-      </div>
+      <Routes>
+        {/* New UI/UX Prototypes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+
+        {/* Existing Features */}
+        <Route path="/old" element={<ConversationList />} />
+        <Route path="/conversations/new" element={<ConversationForm />} />
+        <Route path="/conversations/:id" element={<ConversationDetail />} />
+        <Route path="/conversations/:id/edit" element={<ConversationForm />} />
+        <Route path="/ask" element={<AskQuestions />} />
+      </Routes>
     </BrowserRouter>
   );
 }

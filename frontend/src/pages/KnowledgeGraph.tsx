@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ForceGraph2D from 'react-force-graph';
+import { ForceGraph2D } from 'react-force-graph';
 import { Navigation } from '../components/design-system/Navigation';
 import { Card } from '../components/design-system/Card';
 import { Button } from '../components/design-system/Button';

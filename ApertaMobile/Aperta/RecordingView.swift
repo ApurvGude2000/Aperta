@@ -5,6 +5,7 @@ struct RecordingView: View {
     let onEndEvent: () -> Void
     @StateObject private var recorder = SimpleWhisperRecorder()
     @State private var showError = false
+    @State private var hasRecordedOnce = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -31,6 +32,37 @@ struct RecordingView: View {
                     ProgressView(value: recorder.modelLoadingProgress)
                         .padding()
                 }
+            }
+
+            // Recording status with timer and indicator
+            if recorder.isRecording {
+                HStack(spacing: 12) {
+                    PulsingRecordIndicator(isRecording: recorder.isRecording)
+                    RecordingTimerView(duration: recorder.recordingDuration)
+                }
+                .padding(.vertical, 8)
+            }
+
+            // Visual feedback during recording
+            if recorder.isRecording {
+                VStack(spacing: 16) {
+                    // Waveform visualization
+                    WaveformView(level: recorder.audioLevel)
+                        .frame(height: 80)
+                        .padding(.horizontal)
+
+                    // Audio level meter
+                    HStack {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        AudioLevelMeter(level: recorder.audioLevel)
+                    }
+                }
+                .padding(.vertical)
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(12)
+                .padding(.horizontal)
             }
             
             // Live transcript display
@@ -59,7 +91,7 @@ struct RecordingView: View {
                         HStack {
                             Image(systemName: "mic.circle.fill")
                                 .font(.title)
-                            Text("Start Recording")
+                            Text(hasRecordedOnce ? "Start New Recording" : "Start Recording")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -96,6 +128,7 @@ struct RecordingView: View {
                             Task {
                                 do {
                                     try await recorder.stopRecordingAndTranscribe()
+                                    hasRecordedOnce = true
                                 } catch {
                                     showError = true
                                 }

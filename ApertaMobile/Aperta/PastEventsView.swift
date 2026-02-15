@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct PastEventsView: View {
-    // TODO: Will load from cloud storage later
     @State private var events: [Event] = []
-    
+    @State private var eventToDelete: Event?
+    @State private var showDeleteConfirmation = false
+
     var body: some View {
         List {
             if events.isEmpty {
@@ -40,10 +41,52 @@ struct PastEventsView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            eventToDelete = event
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
         .navigationTitle("Past Events")
+        .onAppear {
+            loadEvents()
+        }
+        .confirmationDialog(
+            "Delete Event",
+            isPresented: $showDeleteConfirmation,
+            presenting: eventToDelete
+        ) { event in
+            Button("Delete", role: .destructive) {
+                deleteEvent(event)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { event in
+            Text("Are you sure you want to delete '\(event.name)'? This action cannot be undone.")
+        }
+    }
+
+    private func deleteEvent(_ event: Event) {
+        do {
+            try EventStorageManager.shared.deleteEvent(event)
+            events.removeAll { $0.id == event.id }
+            print("✅ Deleted event: \(event.name)")
+        } catch {
+            print("❌ Failed to delete event: \(error)")
+        }
+    }
+
+    private func loadEvents() {
+        do {
+            events = try EventStorageManager.shared.loadAllEvents()
+            print("✅ Loaded \(events.count) events")
+        } catch {
+            print("❌ Failed to load events: \(error)")
+        }
     }
 }
 

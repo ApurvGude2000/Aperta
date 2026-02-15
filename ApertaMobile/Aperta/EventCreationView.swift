@@ -146,8 +146,11 @@ struct EventCreationView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: PastEventsView()) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.title2)
+                        HStack(spacing: 6) {
+                            Image(systemName: "clock.arrow.circlepath")
+                            Text("Past Events")
+                                .font(.subheadline)
+                        }
                     }
                 }
             }
@@ -164,6 +167,15 @@ struct EventCreationView: View {
             location: eventLocation.isEmpty ? "No location" : eventLocation,
             date: eventDate
         )
+
+        // Save event to local storage
+        do {
+            try EventStorageManager.shared.saveEvent(event)
+            print("✅ Event saved successfully!")
+        } catch {
+            print("❌ Failed to save event: \(error)")
+        }
+
         createdEvent = event
         eventCreated = true
     }

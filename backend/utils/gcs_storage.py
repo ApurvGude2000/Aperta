@@ -1,5 +1,5 @@
-# ABOUTME: Google Cloud Storage utility for managing ChromaDB persistence in GCS buckets.
-# ABOUTME: Handles upload/download of ChromaDB data and provides GCS bucket operations.
+# ABOUTME: Google Cloud Storage utility for managing all GCS bucket operations.
+# ABOUTME: Handles audio files, transcripts with append capability, and ChromaDB persistence.
 
 from google.cloud import storage
 from google.oauth2 import service_account
@@ -168,6 +168,120 @@ class GCSStorage:
         except Exception as e:
             logger.error(f"Failed to backup database: {e}")
             return False
+
+    def save_audio_file(
+        self,
+        file_data: bytes,
+        event_name: str,
+        filename: str,
+        content_type: str = "audio/m4a"
+    ) -> Optional[str]:
+        """
+        Save audio file to GCS bucket.
+
+        Args:
+            file_data: Audio file bytes
+            event_name: Event name for organizing files
+            filename: Filename with extension (e.g., "20240215_143000.m4a")
+            content_type: MIME type of the audio file
+
+        Returns:
+            GCS path if successful, None otherwise
+        """
+        try:
+            gcs_path = f"audio/{event_name}/{filename}"
+            blob = self.bucket.blob(gcs_path)
+            blob.upload_from_string(file_data, content_type=content_type)
+            logger.info(f"Saved audio file to gs://{self.bucket_name}/{gcs_path}")
+            return gcs_path
+
+        except Exception as e:
+            logger.error(f"Failed to save audio file: {e}")
+            return None
+
+    def get_transcript(self, event_name: str) -> Optional[str]:
+        """
+        Get transcript content for an event.
+
+        Args:
+            event_name: Event name
+
+        Returns:
+            Transcript text if exists, empty string if not found, None on error
+        """
+        try:
+            gcs_path = f"transcripts/{event_name}.txt"
+            blob = self.bucket.blob(gcs_path)
+
+            if not blob.exists():
+                logger.info(f"Transcript does not exist yet: {gcs_path}")
+                return ""
+
+            content = blob.download_as_text()
+            logger.info(f"Downloaded transcript from gs://{self.bucket_name}/{gcs_path} ({len(content)} chars)")
+            return content
+
+        except Exception as e:
+            logger.error(f"Failed to get transcript: {e}")
+            return None
+
+    def append_to_transcript(self, event_name: str, new_transcript: str) -> bool:
+        """
+        Append new transcript to existing event transcript file.
+        If file doesn't exist, creates it.
+
+        Args:
+            event_name: Event name
+            new_transcript: New transcript text to append
+
+        Returns:
+            bool: Success status
+        """
+        try:
+            gcs_path = f"transcripts/{event_name}.txt"
+
+            # Get existing content
+            existing_content = self.get_transcript(event_name)
+            if existing_content is None:
+                logger.error(f"Failed to get existing transcript for {event_name}")
+                return False
+
+            # Append new content with separator
+            separator = "\n\n---\n\n" if existing_content else ""
+            updated_content = existing_content + separator + new_transcript
+
+            # Upload updated content
+            blob = self.bucket.blob(gcs_path)
+            blob.upload_from_string(updated_content, content_type="text/plain")
+
+            logger.info(f"Appended {len(new_transcript)} chars to gs://{self.bucket_name}/{gcs_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to append to transcript: {e}")
+            return False
+
+    def save_transcript(self, event_name: str, transcript_content: str) -> Optional[str]:
+        """
+        Save/overwrite transcript file for an event.
+
+        Args:
+            event_name: Event name
+            transcript_content: Full transcript text
+
+        Returns:
+            GCS path if successful, None otherwise
+        """
+        try:
+            gcs_path = f"transcripts/{event_name}.txt"
+            blob = self.bucket.blob(gcs_path)
+            blob.upload_from_string(transcript_content, content_type="text/plain")
+            logger.info(f"Saved transcript to gs://{self.bucket_name}/{gcs_path} ({len(transcript_content)} chars)")
+            return gcs_path
+
+        except Exception as e:
+            logger.error(f"Failed to save transcript: {e}")
+            return None
 
 
 def get_gcs_storage() -> Optional[GCSStorage]:

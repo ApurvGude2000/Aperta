@@ -3,7 +3,7 @@ Audio processing API endpoints for transcription and speaker diarization.
 Critical P1 component for the audio streaming pipeline.
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -113,8 +113,8 @@ class StorageInfo(BaseModel):
     """Storage configuration info."""
     storage_type: str
     local_path: Optional[str]
-    s3_bucket: Optional[str]
-    s3_enabled: bool
+    gcp_bucket: Optional[str]
+    gcp_enabled: bool
 
 
 # Initialize audio processor (lazy loaded)
@@ -137,21 +137,18 @@ def get_storage_service() -> StorageService:
     if storage_instance is None:
         logger.info("Initializing storage service...")
 
-        # Check if S3 should be used
-        use_s3 = bool(
-            settings.aws_access_key_id
-            and settings.aws_secret_access_key
-            and settings.s3_bucket_name
+        # Check if GCP should be used
+        use_gcp = bool(
+            settings.gcp_bucket_name
+            and settings.gcp_service_account_json
         )
 
         config = StorageConfig(
             local_storage_path="./uploads",
-            use_s3=use_s3,
-            s3_bucket=settings.s3_bucket_name if use_s3 else None,
-            s3_region=settings.s3_region if use_s3 else None,
-            s3_access_key=settings.aws_access_key_id if use_s3 else None,
-            s3_secret_key=settings.aws_secret_access_key if use_s3 else None,
-            s3_endpoint_url=settings.s3_endpoint_url if use_s3 else None,
+            use_gcp=use_gcp,
+            gcp_bucket=settings.gcp_bucket_name if use_gcp else None,
+            gcp_project_id=settings.gcp_project_id if use_gcp else None,
+            gcp_service_account_json=settings.gcp_service_account_json if use_gcp else None,
         )
         storage_instance = StorageService(config)
     return storage_instance
@@ -236,12 +233,27 @@ async def process_audio_file(
             },
         )
 
-        # Save transcript to storage
-        logger.info(f"Saving transcript to storage...")
+        # Run PII redaction on transcript
+        logger.info(f"Running PII Guardian to protect transcript...")
+        privacy_agent = PrivacyGuardianAgent()
+        redacted_transcript = await privacy_agent.redact_transcript(formatted)
+
+        # Save ORIGINAL transcript to storage (for agent parsing)
+        logger.info(f"Saving original transcript to storage (for agents)...")
         transcript_file_path = await storage.save_transcript(
             transcript_text=formatted,
             conversation_id=conv_id,
             format="txt",
+            folder="transcripts",  # Original for agent parsing
+        )
+
+        # Save PII-REDACTED transcript to storage (outward-facing for users)
+        logger.info(f"Saving PII-redacted transcript to storage (for users)...")
+        clean_transcript_file_path = await storage.save_transcript(
+            transcript_text=redacted_transcript,
+            conversation_id=conv_id,
+            format="txt",
+            folder="transcripts-clean",  # Clean version for users
         )
 
         # Save to database (optional - fails gracefully if database unavailable)
@@ -304,9 +316,9 @@ async def process_audio_file(
 @router.post("/process-event", response_model=EventAudioProcessResponse, status_code=200)
 async def process_event_audio(
     file: UploadFile = File(...),
-    conversation_id: Optional[str] = None,
-    event_name: Optional[str] = None,
-    location: Optional[str] = None,
+    event_name: str = Form(...),
+    conversation_id: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
     db: Optional[AsyncSession] = Depends(lambda: _get_optional_db_session())
 ) -> EventAudioProcessResponse:
     """
@@ -315,14 +327,15 @@ async def process_event_audio(
     This endpoint:
     1. Accepts audio file from iOS app or web
     2. Runs transcription and speaker diarization
-    3. Runs AI agents for entity extraction, sentiment analysis
-    4. Stores everything with proper relationships
-    5. Returns comprehensive analysis
+    3. Appends transcript to event's transcript file
+    4. Runs AI agents for entity extraction, sentiment analysis
+    5. Stores everything with proper relationships
+    6. Returns comprehensive analysis
 
     Args:
         file: Audio file upload
+        event_name: Name of the event (REQUIRED - determines transcript file)
         conversation_id: Optional existing conversation ID
-        event_name: Name of the event
         location: Event location
         db: Database session
 
@@ -339,6 +352,9 @@ async def process_event_audio(
                 status_code=400,
                 detail="Invalid file format. Supported: WAV, MP3, FLAC, OGG, M4A"
             )
+
+        if not event_name:
+            raise HTTPException(status_code=400, detail="event_name is required")
 
         # Load and preprocess audio
         logger.info(f"Loading audio file: {file.filename}")
@@ -359,27 +375,38 @@ async def process_event_audio(
         stats = processor.get_speaker_stats(diarized_transcript)
 
         # Save audio file to storage
-        logger.info(f"Saving audio file to storage...")
+        logger.info(f"Saving audio file to storage for event: {event_name}")
         storage = get_storage_service()
+
+        # Generate unique filename with timestamp
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        file_ext = file.filename.split(".")[-1].lower()
+        unique_filename = f"{timestamp}.{file_ext}"
+
         audio_file_path = await storage.save_audio_file(
             file_content=audio_bytes,
-            conversation_id=conv_id,
-            filename=file.filename,
+            event_name=event_name,
+            filename=unique_filename,
             metadata={
                 "duration": diarized_transcript.total_duration,
                 "speaker_count": diarized_transcript.speaker_count,
                 "event_name": event_name,
                 "location": location,
                 "uploaded_at": datetime.utcnow().isoformat(),
+                "original_filename": file.filename,
             },
         )
 
-        # Save transcript to storage
-        logger.info(f"Saving transcript to storage...")
-        transcript_file_path = await storage.save_transcript(
+        # Run PII redaction on transcript
+        logger.info(f"Running PII Guardian to protect transcript...")
+        privacy_agent = PrivacyGuardianAgent()
+        redacted_transcript = await privacy_agent.redact_transcript(formatted)
+
+        # Append transcript to event's transcript file
+        logger.info(f"Appending transcript to event file: transcripts/{event_name}.txt")
+        transcript_file_path = await storage.append_transcript(
             transcript_text=formatted,
-            conversation_id=conv_id,
-            format="txt",
+            event_name=event_name,
         )
 
         # Run AI agents for analysis

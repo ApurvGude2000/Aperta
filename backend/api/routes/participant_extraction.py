@@ -97,16 +97,31 @@ async def extract_participants_from_conversation(
 
         # Create participant records in database
         participants_list = []
+        candidate_count = 0
+        recruiter_count = 0
+
         for idx, (key, info) in enumerate(participants_dict.items(), 1):
-            # Generate proper name or use "Unknown"
+            # Generate proper name
             name = info.get("name")
-            if name in ["Job Candidate", "Company Recruiter"]:
-                if info.get("company"):
-                    name = f"{info['company']} Recruiter" if info["role"] == "recruiter" else f"Candidate ({info['company']})"
-                elif info.get("title"):
-                    name = info["title"] if info["role"] == "recruiter" else f"Candidate ({info['title']})"
-                else:
-                    name = "Unknown"
+
+            if not name:
+                # Generate descriptive name based on available info
+                if info["role"] == "candidate":
+                    candidate_count += 1
+                    if info.get("title"):
+                        name = f"Candidate - {info['title']}"
+                    elif info.get("company"):
+                        name = f"Candidate from {info['company']}"
+                    else:
+                        name = f"Job Seeker #{candidate_count}"
+                else:  # recruiter
+                    recruiter_count += 1
+                    if info.get("company"):
+                        name = f"{info['company']} Recruiter"
+                    elif info.get("title"):
+                        name = f"{info['title']}"
+                    else:
+                        name = f"Recruiter #{recruiter_count}"
 
             participant = Participant(
                 conversation_id=conversation_id,
@@ -224,11 +239,29 @@ def extract_person_info(text: str, role: str) -> dict:
     """Extract person information from text."""
     info = {
         "role": role,
-        "name": "Job Candidate" if role == "candidate" else "Company Recruiter",
+        "name": None,
         "company": None,
         "title": None,
         "topics": []
     }
+
+    # Try to extract name first
+    name_patterns = [
+        r"(?:I'm|I am|My name is|This is|Call me) ([A-Z][a-z]+(?: [A-Z][a-z]+)?)",
+        r"^([A-Z][a-z]+ [A-Z][a-z]+)(?:,|\.| here| speaking)",
+    ]
+
+    for pattern in name_patterns:
+        match = re.search(pattern, text)
+        if match:
+            name = match.group(1).strip()
+            # Validate it's a name (2 words, proper case, not too long)
+            words = name.split()
+            if (1 <= len(words) <= 3 and
+                len(name) < 30 and
+                name not in ["I was", "I noticed", "I want", "I saw", "Great", "Perfect"]):
+                info["name"] = name
+                break
 
     # Extract company - only extract if it looks like a real company name
     company_patterns = [

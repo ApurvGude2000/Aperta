@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Events } from './pages/Events';
 import { EventDetailNew } from './pages/EventDetailNew';
 import { KnowledgeGraph } from './pages/KnowledgeGraph';
+import { KnowledgeGraphTest } from './pages/KnowledgeGraphTest';
 import { ConversationList } from './pages/ConversationList';
 import { ConversationDetail } from './pages/ConversationDetail';
 import { ConversationForm } from './pages/ConversationForm';
@@ -74,6 +75,7 @@ export function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/events/:id" element={<EventDetailNew />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+        <Route path="/knowledge-graph-test" element={<KnowledgeGraphTest />} />
         <Route path="/settings" element={<Settings />} />
 
         {/* Existing Features */}

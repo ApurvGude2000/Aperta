@@ -192,27 +192,37 @@ async def get_knowledge_graph(
                 topics.update(conversation_entities.get(conv.id, []))
             participant_topics[participant_id] = topics
 
-        # Find participants with 2+ common topics
+        # Find participants with common topics and calculate weight based on overlap
         participant_ids = list(participant_topics.keys())
         for i, p1_id in enumerate(participant_ids):
             for p2_id in participant_ids[i+1:]:
                 common_topics = participant_topics[p1_id] & participant_topics[p2_id]
 
-                if len(common_topics) >= 2:  # At least 2 common topics
+                if len(common_topics) >= 1:  # At least 1 common topic
                     edge_key = tuple(sorted([p1_id, p2_id]))
 
                     if edge_key not in edges_set:
                         edges_set.add(edge_key)
                         topic_list = list(common_topics)[:3]
+
+                        # Calculate weight based on number of common topics (1-5 scale)
+                        weight = min(len(common_topics) * 0.5, 3.0)
+
                         edge = GraphEdge(
                             source=p1_id,
                             target=p2_id,
-                            weight=0.6,
+                            weight=weight,
                             connection_type="common_topics",
                             context=f"Common interests: {', '.join(topic_list)}",
                             events=[]
                         )
                         edges.append(edge)
+                    else:
+                        # Strengthen existing edge if topics overlap
+                        for edge in edges:
+                            if set([edge.source, edge.target]) == set([p1_id, p2_id]):
+                                edge.weight += len(common_topics) * 0.3
+                                break
 
         # Update connection counts
         connection_counts = defaultdict(int)

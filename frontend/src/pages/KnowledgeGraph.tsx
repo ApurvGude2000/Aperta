@@ -144,8 +144,8 @@ export function KnowledgeGraph() {
             </div>
 
             {/* Center: Graph Canvas */}
-            <div className="flex-1 flex">
-              <Card className="flex-1 bg-[#121417] text-white relative overflow-hidden p-0">
+            <div className="flex-1 flex" style={{ minHeight: '800px' }}>
+              <Card className="flex-1 bg-white relative overflow-hidden p-0 border-2 border-gray-200">
                 {loading && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -188,50 +188,70 @@ export function KnowledgeGraph() {
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                       const label = node.name || 'Unknown';
                       const fontSize = 14 / globalScale;
-                      ctx.font = `bold ${fontSize}px Sans-Serif`;
-                      const textWidth = ctx.measureText(label).width;
-                      const bckgDimensions = [textWidth + fontSize * 0.8, fontSize * 1.4];
+                      const nodeSize = 12;
 
-                      // Draw circle with larger size
+                      // Draw outer circle (white border)
                       ctx.beginPath();
-                      ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI, false);
-                      ctx.fillStyle = '#00C2FF';
+                      ctx.arc(node.x, node.y, nodeSize + 2, 0, 2 * Math.PI, false);
+                      ctx.fillStyle = '#FFFFFF';
                       ctx.fill();
-                      ctx.strokeStyle = '#0096CC';
-                      ctx.lineWidth = 2;
-                      ctx.stroke();
 
-                      // Draw label background
-                      ctx.fillStyle = 'rgba(18, 20, 23, 0.9)';
-                      ctx.fillRect(
-                        node.x - bckgDimensions[0] / 2,
-                        node.y + 15,
-                        bckgDimensions[0],
-                        bckgDimensions[1]
-                      );
+                      // Draw main circle
+                      ctx.beginPath();
+                      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
+                      ctx.fillStyle = '#3B82F6';
+                      ctx.fill();
 
-                      // Draw label text
+                      // Draw label
+                      ctx.font = `600 ${fontSize}px sans-serif`;
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
-                      ctx.fillStyle = '#FFFFFF';
-                      ctx.fillText(label, node.x, node.y + 15 + bckgDimensions[1] / 2);
+
+                      const labelY = node.y + 28;
+
+                      // Label background
+                      const textWidth = ctx.measureText(label).width;
+                      const padding = 8;
+                      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                      ctx.fillRect(
+                        node.x - textWidth / 2 - padding,
+                        labelY - fontSize / 2 - 4,
+                        textWidth + padding * 2,
+                        fontSize + 8
+                      );
+
+                      // Label text
+                      ctx.fillStyle = '#1F2937';
+                      ctx.fillText(label, node.x, labelY);
                     }}
                     linkLabel={(link: any) => link.context || ''}
                     linkColor={(link: any) => {
-                      switch (link.connection_type) {
-                        case 'same_event': return '#00C2FF';
-                        case 'same_company': return '#10B981';
-                        case 'common_topics': return '#F59E0B';
-                        default: return '#6B7280';
-                      }
+                      // Color intensity based on weight
+                      const baseColor = link.connection_type === 'same_company' ?
+                        { r: 16, g: 185, b: 129 } : // Green for company
+                        { r: 59, g: 130, b: 246 }; // Blue for topics
+
+                      const alpha = Math.min(0.3 + (link.weight * 0.2), 0.9);
+                      return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha})`;
                     }}
-                    linkWidth={(link: any) => Math.sqrt(link.weight) * 2}
-                    linkDirectionalParticles={2}
-                    linkDirectionalParticleWidth={(link: any) => link.weight * 2}
+                    linkWidth={(link: any) => {
+                      // Thicker lines for stronger connections
+                      return Math.max(1, Math.min(link.weight * 2, 8));
+                    }}
+                    linkDirectionalParticles={(link: any) => {
+                      // More particles for stronger connections
+                      return link.weight > 2 ? 4 : 2;
+                    }}
+                    linkDirectionalParticleWidth={(link: any) => Math.min(link.weight * 1.5, 4)}
+                    linkDirectionalParticleSpeed={0.005}
                     onNodeClick={(node: any) => setSelectedNode(node as GraphNode)}
-                    backgroundColor="#121417"
-                    width={800}
-                    height={600}
+                    backgroundColor="#FAFAFA"
+                    d3AlphaDecay={0.02}
+                    d3VelocityDecay={0.3}
+                    cooldownTime={3000}
+                    warmupTicks={100}
+                    nodeRelSize={8}
+                    linkHoverPrecision={10}
                   />
                 )}
               </Card>

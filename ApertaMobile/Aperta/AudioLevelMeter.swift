@@ -32,7 +32,7 @@ struct AudioLevelMeter: View {
 }
 
 #Preview {
-    VStack(spacing: 30) {
+    VStack(spaci: 30) {
         AudioLevelMeter(level: 0.2)
         AudioLevelMeter(level: 0.5)
         AudioLevelMeter(level: 0.9)

@@ -24,7 +24,7 @@ from agents import (
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations
+from api.routes import qa, conversations, search
 
 logger = setup_logger(__name__)
 
@@ -145,15 +145,16 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.get_cors_origins_list(),
     allow_credentials=settings.cors_credentials,
-    allow_methods=settings.cors_methods,
-    allow_headers=settings.cors_headers,
+    allow_methods=settings.get_cors_methods_list(),
+    allow_headers=settings.get_cors_headers_list(),
 )
 
 # Include routers
 app.include_router(qa.router)
 app.include_router(conversations.router)
+app.include_router(search.router)
 
 
 @app.get("/")

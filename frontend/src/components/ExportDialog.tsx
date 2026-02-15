@@ -2,7 +2,7 @@
 // ABOUTME: Supports JSON, TXT, and Markdown export formats
 
 import { useState } from 'react';
-import { exportConversation } from '../api/client';
+import { api } from '../api/client';
 
 interface ExportDialogProps {
   conversationId: number;
@@ -25,8 +25,11 @@ export default function ExportDialog({ conversationId, conversationTitle, isOpen
     setError(null);
 
     try {
-      const blob = await exportConversation(conversationId, format);
-      
+      const data = await api.exportConversation(conversationId.toString(), format);
+
+      // Convert string to Blob
+      const blob = new Blob([data], { type: 'text/plain' });
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

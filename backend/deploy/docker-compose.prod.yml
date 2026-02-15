@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: aperta-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - aperta-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: aperta-backend
+    environment:
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - ELASTICSEARCH_USER=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - JINA_API_KEY=${JINA_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:///./aperta.db
+    volumes:
+      - backend_data:/app/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    networks:
+      - aperta-network
+    restart: unless-stopped
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  backend_data:
+    driver: local
+
+networks:
+  aperta-network:
+    driver: bridge

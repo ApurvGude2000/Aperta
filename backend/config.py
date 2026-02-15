@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     # Perplexity API Configuration (for Cross-Pollination Agent)
     perplexity_api_key: Optional[str] = None
 
+    # JINA AI Configuration (for embeddings)
+    jina_api_key: Optional[str] = None
+
+    # Elasticsearch Configuration (for semantic search)
+    elasticsearch_host: str = "http://localhost:9200"
+    elasticsearch_user: str = "elastic"
+    elasticsearch_password: Optional[str] = None
+
     # Fetch.ai Configuration
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None
@@ -61,10 +69,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # CORS Configuration
-    cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: Optional[str] = "http://localhost:5173,http://localhost:3000"
     cors_credentials: bool = True
-    cors_methods: List[str] = ["*"]
-    cors_headers: List[str] = ["*"]
+    cors_methods: Optional[str] = "*"
+    cors_headers: Optional[str] = "*"
 
     # WebSocket Configuration
     ws_heartbeat_interval: int = 30
@@ -93,26 +101,29 @@ class Settings(BaseSettings):
         env_parse_none_str="null"
     )
 
-    @field_validator('cors_origins', mode='before')
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+    def get_cors_origins_list(self) -> List[str]:
+        """Parse CORS origins from string to list"""
+        if not self.cors_origins:
+            return ["http://localhost:5173", "http://localhost:3000"]
+        if isinstance(self.cors_origins, str):
+            return [item.strip() for item in self.cors_origins.split(',') if item.strip()]
+        return self.cors_origins
 
-    @field_validator('cors_methods', mode='before')
-    @classmethod
-    def parse_cors_methods(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+    def get_cors_methods_list(self) -> List[str]:
+        """Parse CORS methods from string to list"""
+        if not self.cors_methods:
+            return ["*"]
+        if isinstance(self.cors_methods, str):
+            return [item.strip() for item in self.cors_methods.split(',') if item.strip()]
+        return self.cors_methods
 
-    @field_validator('cors_headers', mode='before')
-    @classmethod
-    def parse_cors_headers(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+    def get_cors_headers_list(self) -> List[str]:
+        """Parse CORS headers from string to list"""
+        if not self.cors_headers:
+            return ["*"]
+        if isinstance(self.cors_headers, str):
+            return [item.strip() for item in self.cors_headers.split(',') if item.strip()]
+        return self.cors_headers
 
 
 @lru_cache()

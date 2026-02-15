@@ -41,7 +41,23 @@ export function KnowledgeGraph() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const fgRef = useRef<any>();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Get container dimensions
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
 
   useEffect(() => {
     fetchGraphData();
@@ -56,9 +72,17 @@ export function KnowledgeGraph() {
       }
       const data: KnowledgeGraphData = await response.json();
 
-      // Transform edges to links for ForceGraph2D
+      // Transform edges to links and set random initial positions
+      const nodes = data.nodes.map(node => ({
+        ...node,
+        x: Math.random() * dimensions.width,
+        y: Math.random() * dimensions.height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2
+      }));
+
       setGraphData({
-        nodes: data.nodes,
+        nodes: nodes,
         links: data.edges
       });
       setError(null);
@@ -144,8 +168,8 @@ export function KnowledgeGraph() {
             </div>
 
             {/* Center: Graph Canvas - FULL WIDTH */}
-            <div className="flex-1 flex" style={{ minHeight: 'calc(100vh - 250px)', width: '100%' }}>
-              <Card className="flex-1 bg-white relative overflow-hidden p-0 border border-gray-200">
+            <div ref={containerRef} className="flex-1 flex" style={{ minHeight: 'calc(100vh - 250px)', width: '100%' }}>
+              <Card className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden p-0 border border-gray-200">
                 {loading && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -187,40 +211,75 @@ export function KnowledgeGraph() {
                     }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                       const label = node.name || 'Unknown';
-                      const fontSize = 16 / globalScale;
-                      const nodeSize = 15;
+                      const fontSize = 18 / globalScale;
+                      const nodeSize = 25;
 
-                      // Draw white circle
+                      // Draw shadow
+                      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+                      ctx.shadowBlur = 12;
+                      ctx.shadowOffsetX = 0;
+                      ctx.shadowOffsetY = 4;
+
+                      // Draw main white circle
                       ctx.beginPath();
                       ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
                       ctx.fillStyle = '#FFFFFF';
                       ctx.fill();
 
-                      // Thin gray outline
-                      ctx.strokeStyle = '#D1D5DB';
-                      ctx.lineWidth = 1.5;
+                      // Reset shadow
+                      ctx.shadowColor = 'transparent';
+                      ctx.shadowBlur = 0;
+
+                      // Draw subtle outline
+                      ctx.strokeStyle = '#E5E7EB';
+                      ctx.lineWidth = 2;
                       ctx.stroke();
 
-                      // Draw label
-                      ctx.font = `600 ${fontSize}px sans-serif`;
+                      // Draw inner accent circle
+                      ctx.beginPath();
+                      ctx.arc(node.x, node.y, nodeSize - 8, 0, 2 * Math.PI, false);
+                      ctx.strokeStyle = '#3B82F6';
+                      ctx.lineWidth = 2.5;
+                      ctx.stroke();
+
+                      // Draw label with shadow
+                      ctx.font = `700 ${fontSize}px -apple-system, system-ui, sans-serif`;
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
 
-                      const labelY = node.y + 32;
-
-                      // Label background
+                      const labelY = node.y + nodeSize + 25;
                       const textWidth = ctx.measureText(label).width;
-                      const padding = 10;
-                      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                      const padding = 12;
+                      const labelHeight = fontSize + 12;
+
+                      // Label shadow
+                      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                      ctx.shadowBlur = 8;
+                      ctx.shadowOffsetY = 2;
+
+                      // Label background with subtle border
+                      ctx.fillStyle = '#FFFFFF';
                       ctx.fillRect(
                         node.x - textWidth / 2 - padding,
-                        labelY - fontSize / 2 - 5,
+                        labelY - labelHeight / 2,
                         textWidth + padding * 2,
-                        fontSize + 10
+                        labelHeight
                       );
 
+                      ctx.strokeStyle = '#E5E7EB';
+                      ctx.lineWidth = 1;
+                      ctx.strokeRect(
+                        node.x - textWidth / 2 - padding,
+                        labelY - labelHeight / 2,
+                        textWidth + padding * 2,
+                        labelHeight
+                      );
+
+                      // Reset shadow for text
+                      ctx.shadowColor = 'transparent';
+
                       // Label text
-                      ctx.fillStyle = '#111827';
+                      ctx.fillStyle = '#1F2937';
                       ctx.fillText(label, node.x, labelY);
                     }}
                     linkLabel={(link: any) => link.context || ''}
@@ -242,20 +301,23 @@ export function KnowledgeGraph() {
                       return link.weight > 2 ? 4 : 2;
                     }}
                     linkDirectionalParticleWidth={(link: any) => Math.min(link.weight * 1.5, 4)}
-                    linkDirectionalParticleSpeed={0.005}
+                    linkDirectionalParticleSpeed={0.004}
                     onNodeClick={(node: any) => setSelectedNode(node as GraphNode)}
-                    backgroundColor="#F9FAFB"
-                    d3AlphaDecay={0.015}
-                    d3VelocityDecay={0.2}
+                    backgroundColor="transparent"
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    d3AlphaDecay={0.01}
+                    d3VelocityDecay={0.15}
                     d3Force={{
-                      charge: { strength: -2000, distanceMax: 1000 },
-                      link: { distance: 200 },
-                      center: { strength: 0.3 }
+                      charge: { strength: -3500, distanceMax: 2000 },
+                      link: { distance: 350, strength: 0.3 },
+                      center: { strength: 0.05 },
+                      collision: { radius: 100 }
                     }}
-                    cooldownTime={5000}
-                    warmupTicks={150}
-                    nodeRelSize={10}
-                    linkHoverPrecision={10}
+                    cooldownTime={8000}
+                    warmupTicks={200}
+                    nodeRelSize={12}
+                    linkHoverPrecision={15}
                     enableNodeDrag={true}
                     enableZoomInteraction={true}
                     enablePanInteraction={true}

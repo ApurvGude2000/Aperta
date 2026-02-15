@@ -86,10 +86,10 @@ export function KnowledgeGraph() {
             <p className="text-[#6B7280]">Explore your networking connections and relationships</p>
           </div>
 
-          {/* Layout: Sidebar + Graph Canvas */}
+          {/* Layout: Graph Canvas (full width, no sidebar for now) */}
           <div className="flex gap-8">
-            {/* Left Sidebar: Filters */}
-            <div className="w-64 flex-shrink-0">
+            {/* Left Sidebar: Filters - HIDDEN FOR NOW */}
+            <div className="w-64 flex-shrink-0" style={{ display: 'none' }}>
               <Card className="sticky top-24">
                 <h3 className="font-bold text-[#121417] mb-4">Filters</h3>
 
@@ -143,9 +143,9 @@ export function KnowledgeGraph() {
               </Card>
             </div>
 
-            {/* Center: Graph Canvas */}
-            <div className="flex-1 flex" style={{ minHeight: '800px' }}>
-              <Card className="flex-1 bg-white relative overflow-hidden p-0 border-2 border-gray-200">
+            {/* Center: Graph Canvas - FULL WIDTH */}
+            <div className="flex-1 flex" style={{ minHeight: 'calc(100vh - 250px)', width: '100%' }}>
+              <Card className="flex-1 bg-white relative overflow-hidden p-0 border border-gray-200">
                 {loading && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -187,41 +187,40 @@ export function KnowledgeGraph() {
                     }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                       const label = node.name || 'Unknown';
-                      const fontSize = 14 / globalScale;
-                      const nodeSize = 12;
+                      const fontSize = 16 / globalScale;
+                      const nodeSize = 15;
 
-                      // Draw outer circle (white border)
+                      // Draw white circle
                       ctx.beginPath();
-                      ctx.arc(node.x, node.y, nodeSize + 2, 0, 2 * Math.PI, false);
+                      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
                       ctx.fillStyle = '#FFFFFF';
                       ctx.fill();
 
-                      // Draw main circle
-                      ctx.beginPath();
-                      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
-                      ctx.fillStyle = '#3B82F6';
-                      ctx.fill();
+                      // Thin gray outline
+                      ctx.strokeStyle = '#D1D5DB';
+                      ctx.lineWidth = 1.5;
+                      ctx.stroke();
 
                       // Draw label
                       ctx.font = `600 ${fontSize}px sans-serif`;
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
 
-                      const labelY = node.y + 28;
+                      const labelY = node.y + 32;
 
                       // Label background
                       const textWidth = ctx.measureText(label).width;
-                      const padding = 8;
+                      const padding = 10;
                       ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
                       ctx.fillRect(
                         node.x - textWidth / 2 - padding,
-                        labelY - fontSize / 2 - 4,
+                        labelY - fontSize / 2 - 5,
                         textWidth + padding * 2,
-                        fontSize + 8
+                        fontSize + 10
                       );
 
                       // Label text
-                      ctx.fillStyle = '#1F2937';
+                      ctx.fillStyle = '#111827';
                       ctx.fillText(label, node.x, labelY);
                     }}
                     linkLabel={(link: any) => link.context || ''}
@@ -245,13 +244,21 @@ export function KnowledgeGraph() {
                     linkDirectionalParticleWidth={(link: any) => Math.min(link.weight * 1.5, 4)}
                     linkDirectionalParticleSpeed={0.005}
                     onNodeClick={(node: any) => setSelectedNode(node as GraphNode)}
-                    backgroundColor="#FAFAFA"
-                    d3AlphaDecay={0.02}
-                    d3VelocityDecay={0.3}
-                    cooldownTime={3000}
-                    warmupTicks={100}
-                    nodeRelSize={8}
+                    backgroundColor="#F9FAFB"
+                    d3AlphaDecay={0.015}
+                    d3VelocityDecay={0.2}
+                    d3Force={{
+                      charge: { strength: -2000, distanceMax: 1000 },
+                      link: { distance: 200 },
+                      center: { strength: 0.3 }
+                    }}
+                    cooldownTime={5000}
+                    warmupTicks={150}
+                    nodeRelSize={10}
                     linkHoverPrecision={10}
+                    enableNodeDrag={true}
+                    enableZoomInteraction={true}
+                    enablePanInteraction={true}
                   />
                 )}
               </Card>

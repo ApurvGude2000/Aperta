@@ -72,14 +72,18 @@ export function KnowledgeGraph() {
       }
       const data: KnowledgeGraphData = await response.json();
 
-      // Transform edges to links and set random initial positions
-      const nodes = data.nodes.map(node => ({
-        ...node,
-        x: Math.random() * dimensions.width,
-        y: Math.random() * dimensions.height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2
-      }));
+      // Set VERY spread out initial positions in a circle pattern
+      const nodes = data.nodes.map((node, i) => {
+        const angle = (i / data.nodes.length) * 2 * Math.PI;
+        const radius = Math.min(dimensions.width, dimensions.height) * 0.35;
+        return {
+          ...node,
+          x: dimensions.width / 2 + Math.cos(angle) * radius,
+          y: dimensions.height / 2 + Math.sin(angle) * radius,
+          fx: undefined,
+          fy: undefined
+        };
+      });
 
       setGraphData({
         nodes: nodes,
@@ -293,8 +297,9 @@ export function KnowledgeGraph() {
                       return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha})`;
                     }}
                     linkWidth={(link: any) => {
-                      // Thicker lines for stronger connections
-                      return Math.max(1, Math.min(link.weight * 2, 8));
+                      // DRAMATIC variation in line thickness based on weight
+                      // Weight 0.5 = 1px, Weight 1.0 = 3px, Weight 2.0 = 8px, Weight 3.0 = 15px
+                      return Math.max(1, Math.min(link.weight * 5, 20));
                     }}
                     linkDirectionalParticles={(link: any) => {
                       // More particles for stronger connections
@@ -303,20 +308,37 @@ export function KnowledgeGraph() {
                     linkDirectionalParticleWidth={(link: any) => Math.min(link.weight * 1.5, 4)}
                     linkDirectionalParticleSpeed={0.004}
                     onNodeClick={(node: any) => setSelectedNode(node as GraphNode)}
+                    onNodeDrag={(node: any) => {
+                      // Fix node position while dragging
+                      node.fx = node.x;
+                      node.fy = node.y;
+                    }}
+                    onNodeDragEnd={(node: any) => {
+                      // Keep node fixed where user dropped it
+                      node.fx = node.x;
+                      node.fy = node.y;
+                    }}
                     backgroundColor="transparent"
                     width={dimensions.width}
                     height={dimensions.height}
-                    d3AlphaDecay={0.01}
-                    d3VelocityDecay={0.15}
-                    d3Force={{
-                      charge: { strength: -3500, distanceMax: 2000 },
-                      link: { distance: 350, strength: 0.3 },
-                      center: { strength: 0.05 },
-                      collision: { radius: 100 }
+                    d3AlphaDecay={0.005}
+                    d3VelocityDecay={0.1}
+                    d3ForceConfig={{
+                      charge: {
+                        strength: -5000,
+                        distanceMax: 3000
+                      },
+                      link: {
+                        distance: 500,
+                        strength: 0.2
+                      },
+                      center: {
+                        strength: 0
+                      }
                     }}
-                    cooldownTime={8000}
-                    warmupTicks={200}
-                    nodeRelSize={12}
+                    cooldownTime={10000}
+                    warmupTicks={300}
+                    nodeRelSize={15}
                     linkHoverPrecision={15}
                     enableNodeDrag={true}
                     enableZoomInteraction={true}

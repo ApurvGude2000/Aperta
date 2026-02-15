@@ -24,7 +24,7 @@ from agents import (
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations, search
+from api.routes import qa, conversations, search, auth
 
 logger = setup_logger(__name__)
 
@@ -69,8 +69,7 @@ async def lifespan(app: FastAPI):
         logger.info("All agents initialized")
         console_logger.log_info("All 4 core agents initialized", "Startup")
 
-        # Initialize orchestrator
-        orchestrator = AgentOrchestrator()
+        # Register agents with orchestrator (using global instance)
         orchestrator.register_agent(context_agent)
         orchestrator.register_agent(privacy_agent)
         orchestrator.register_agent(followup_agent)
@@ -79,7 +78,6 @@ async def lifespan(app: FastAPI):
         console_logger.log_info("Orchestrator initialized with agents", "Startup")
     except Exception as e:
         logger.warning(f"Agent initialization failed: {e}")
-        orchestrator = None
 
     # Q&A Orchestrator is already initialized globally
     try:

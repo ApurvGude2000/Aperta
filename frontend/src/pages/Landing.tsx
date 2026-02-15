@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/design-system/Button';
 import { Card, FeatureCard } from '../components/design-system/Card';
 
 export function Landing() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in (check for token in localStorage)
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
   const features = [
     {
       icon: '⚡',
@@ -47,7 +54,7 @@ export function Landing() {
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1F3C88] to-[#00C2FF] flex items-center justify-center text-white">
                 🤖
               </div>
-              <span className="text-[#121417]">Agent-Echo</span>
+              <span className="text-[#121417]">Aperta</span>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
@@ -87,12 +94,14 @@ export function Landing() {
             AI-powered networking assistant that captures conversations, builds knowledge graphs, and automates follow-ups—all while keeping your data private.
           </p>
           <div className="flex gap-4">
-            <Link to="/dashboard">
-              <Button size="lg">Get Started →</Button>
+            <Link to={isLoggedIn ? "/dashboard" : "/login"}>
+              <Button size="lg">{isLoggedIn ? "Get Started" : "Login"} →</Button>
             </Link>
-            <Button variant="secondary" size="lg">
-              Learn More
-            </Button>
+            <a href="#how-it-works">
+              <Button variant="secondary" size="lg">
+                Learn More
+              </Button>
+            </a>
           </div>
         </div>
         <div className="hidden lg:flex flex-1 justify-end">
@@ -197,7 +206,7 @@ export function Landing() {
             </div>
           </div>
           <div className="border-t border-[#6B7280] pt-8 text-center text-sm">
-            © 2024 Agent-Echo | Made with privacy in mind
+            © 2024 Aperta | Made with privacy in mind
           </div>
         </div>
       </footer>

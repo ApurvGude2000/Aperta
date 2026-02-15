@@ -75,12 +75,16 @@ export function KnowledgeGraph() {
       console.log('Fetched data:', { nodes: data.nodes.length, edges: data.edges.length });
       console.log('Dimensions:', dimensions);
 
-      // Set RANDOM spread out positions across the entire screen
-      const padding = 150;
+      // Set RANDOM spread out positions across the ENTIRE screen
+      const padding = 100;
+      const width = Math.max(dimensions.width, 1200);
+      const height = Math.max(dimensions.height, 800);
+
       const nodes = data.nodes.map((node, i) => {
-        const x = padding + Math.random() * (dimensions.width - padding * 2);
-        const y = padding + Math.random() * (dimensions.height - padding * 2);
-        console.log(`Node ${i} position:`, { x, y });
+        // Spread across FULL area
+        const x = padding + Math.random() * (width - padding * 2);
+        const y = padding + Math.random() * (height - padding * 2);
+        console.log(`Node ${i} position:`, { x, y, width, height });
         return {
           ...node,
           x: x,
@@ -222,8 +226,8 @@ export function KnowledgeGraph() {
                     }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                       const label = node.name || 'Unknown';
-                      const fontSize = 18 / globalScale;
-                      const nodeSize = 25;
+                      const fontSize = 20 / globalScale;
+                      const nodeSize = 40;
 
                       // Draw shadow
                       ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
@@ -332,12 +336,12 @@ export function KnowledgeGraph() {
                     d3VelocityDecay={0.1}
                     d3ForceConfig={{
                       charge: {
-                        strength: -5000,
-                        distanceMax: 3000
+                        strength: -8000,
+                        distanceMax: 4000
                       },
                       link: {
-                        distance: 500,
-                        strength: 0.2
+                        distance: 600,
+                        strength: 0.1
                       },
                       center: {
                         strength: 0

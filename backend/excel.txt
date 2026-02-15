@@ -1,0 +1,200 @@
+gautam.kumar	(Fetch.ai) Gautam Kumar	(Fetch.​ai) Gautam Kumar	U0AAY4WKR5L	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAY4WKR5L-14d1e8640ec2-48	No	No	Asia/Kolkata	2026-02-15T05:05:57.058Z
+jack	[agentschool] Jack	Jack Luo	U0AEH4LBPU7	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEH4LBPU7-7864aad66996-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+euan		[anthropic] euan	U0AC571B10S	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC571B10S-g9891e4aa962-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+greg	[Anthropic] Greg	Greg Feingold	U0AASCFUE9Z	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AASCFUE9Z-6b21e556383a-48	No	No	Asia/Kolkata	2026-02-15T05:05:57.058Z
+rywang014		[anthropic] Ruiyang Wang	U0AC73Z7H61	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC73Z7H61-a2999d033380-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+ujjwal.gulecha	[Anthropic] Ujjwal Gulecha	Ujjwal Gulecha	U0AC35PRCJ2	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC35PRCJ2-g9def994fae4-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+zxxxxr		[Anthropic] Xiuruo Zhang	U0ABYR5JK0T	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABYR5JK0T-g09fb1702ef6-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+morris_shao	[ASUS] Morris Shao	Morris Shao	U0ACMJXGME3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACMJXGME3-g98934fd4892-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+ngoctrang_pham	[ASUS] Ngoctrang Pham	Ngoctrang Pham	U0ACMGT7UBH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACMGT7UBH-g71fb8688080-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sisic.asus	[ASUS] Sisi Chen	Sisi	U0AD7BZ931U	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AD7BZ931U-gf6d0e60b20b-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+thomas_shu	[ASUS] Thomas Shu	Thomas Shu	U0ADXNQC0GG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADXNQC0GG-gb32a6410643-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+asus.events.us	[ASUS] Yan Yan	ASUS Events	U0ADX9E7XEU	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADX9E7XEU-289b7c65d49c-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+yen1_hoang	[ASUS] Yen Hoang	[ASUS] Yen Hoang	U0ACQNFLWKG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACQNFLWKG-g71d2f01f5a2-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jimmy_ngo	[ASUS} Jimmy Ngo	Jimmy Ngo	U0AD32M12HG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AD32M12HG-gff15cd4d578-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+emmanuelwang6	[Bright Data] Emmanuel Wang	[Bright Data] Emmanuel Wang	U0ACKBBJAPN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACKBBJAPN-g47e777df43b-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jmasters1000	[Bright Data] Jason Masters	Jason Masters	U0AC179B6A3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC179B6A3-g341b33309f0-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jeevithanmahenthran	[Bright Data] Jeevi M	Jeevithan Mahenthran	U0ACESBN7HB	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACESBN7HB-dbfaf33d10ef-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+raphlevi3rd	[Bright Data] Rafael Levi	Rafael Levi	U0AC2EL0MLK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC2EL0MLK-579269e1a4d7-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jay028	[Browserbase] Jay Sahnan	[Browserbase] Jay Sahnan	U0ADSSWUA07	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADSSWUA07-c58a22db1d3a-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+kyle	[Browserbase] Kyle Jeong	Kyle Jeong	U0AB8BRR6BT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB8BRR6BT-7c8c08c22405-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sarif	[Browserbase] Sameel Arif	Sameel Arif	U0AE1SVFY2F	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AE1SVFY2F-d59212ec8bc4-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+shrey		[Browserbase] Shrey Pandya	U0AAW3HMF18	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAW3HMF18-97ccf609754a-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+arpan.kumar	[Cerebras] Arpan Kumar	Arpan Kumar	U0ADE911UUU	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADE911UUU-g16e24fe50c0-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+diyi.zhu	[Cerebras] Diyi Zhu	Diyi Zhu Cerebras	U0AAVGHLHSM	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAVGHLHSM-gff7b13c9994-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+ibrahim.fazili	[Cerebras] Ibrahim Fazili	Ibrahim Fazili	U0ADE90A4DS	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADE90A4DS-g365bc849f70-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sarah.chieng	[Cerebras] Sarah Chieng	Sarah Chieng	U0AAV4UMTQX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAV4UMTQX-gb6c706c44e0-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sarah.josief	[Cerebras] Sarah Josief	Sarah Josief	U0AAGJELY3C	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAGJELY3C-g0ae68a1cd3f-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+zhenwei.gao	[Cerebras] Zhenwei Gao	Zhenwei Gao	U0AAV4SDHAT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAV4SDHAT-ede385efdffd-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+cduong03	[CFO] Christina Duong	Christina Duong	U0AA9MUKKQT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AA9MUKKQT-5bed4f38e2c2-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:05:57.058Z
+craig	[Cloudflare] Craig Dennis	Craig Dennis	U0ABVBZFDU0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABVBZFDU0-43455f597ffa-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jcheong	[Cloudflare] Judy Cheong	[Cloudflare] Judy Cheong	U0AASF6JQ04	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AASF6JQ04-g51b00364e70-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+rajesh	[Cloudflare] Rajesh Bhatia	Rajesh Bhatia	U0AANSU1Z6W	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AANSU1Z6W-gd4f78afedd0-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sfarmin	[Cloudflare] Sabrina Farmin	[Cloudflare] Sabrina Farmin	U0AALRR89N2	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AALRR89N2-gf4cbe0050a3-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+ben	[Cursor] Ben	ben	U0AAA7KSXCK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAA7KSXCK-g9a68a153129-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+ergun.acikoz	[Decagon] Ergun Acikoz	Ergün Açıköz	U0ACQCUNEKG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACQCUNEKG-379e28e35844-48	No	No	America/New_York	2026-02-15T05:05:57.058Z
+hanson.li		[Decagon] Hanson Li	U0ACKBNAQ6N	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACKBNAQ6N-ba53558e8d7d-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+kelsea.an	[Decagon] Kelsea An	Kelsea An	U0ABFE5AARX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABFE5AARX-e913d80f5e74-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+max.zhang	[Decagon] Max Zhang	Max Zhang	U0ACP02VCKW	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACP02VCKW-9c9f997bb3e8-48	No	No	America/New_York	2026-02-15T05:05:57.058Z
+hannahsg	[Director] Hannah Gao	Hannah Gao	U0AAATD5L1K	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAATD5L1K-ebecf7732900-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:05:57.058Z
+rfern	[Director] Rachel Fernandez	Rachel Fernandez	U0AB8KE293J	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB8KE293J-9eabf3e2bffb-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sksauren	[Director] Sauren Khosla	Sauren Khosla	U0ABJH7PS77	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABJH7PS77-ea64b3a487bf-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+thijs	[Director] Thijs Simonian	Thijs Simonian	U0AAEAAP12N	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAEAAP12N-9ab482b16a66-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:05:57.058Z
+egaridis	[Ecopreneurship] Elena Garidis	Elena Garidis	U0AB1HEMWB0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB1HEMWB0-gf32a2d1901f-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+praewa	[Ecopreneurship] Praewa Satutum	Praewa Satutum	U0ABRPX6T9D	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABRPX6T9D-bd84a9842889-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sdamm	[Ecopreneurship] Simon Damm	Simon Damm	U0AE3H8PM46	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AE3H8PM46-0f5d3453ee13-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+jd.armada	[Elastic] JD Armada	JD Armada	U0AAXM9FEQ3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAXM9FEQ3-2f46bcc20783-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+olivia	[Elastic] Olivia Petrie	[Elastic] Olivia Petrie	U0AAH8JJVA7	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAH8JJVA7-g39510d4db21-48	No	No	America/Denver	2026-02-15T05:05:57.058Z
+olivia.petrie	[Elastic] Olivia Petrie	[Elastic] Olivia Petrie	U0AAWH68SJZ	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAWH68SJZ-g4cd75e73fca-48	No	No	America/Denver	2026-02-15T05:05:57.058Z
+pk	[Elastic] Philipp Krenn	xeraa	U0AB213CK46	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB213CK46-gce4685da897-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+sana.wajid	[Fetch.ai] Sana Wajid	Sana Wajid	U0AAREBM0LE	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAREBM0LE-7043b2121eb9-48	No	No	America/Los_Angeles	2026-02-15T05:05:57.058Z
+abhi.gangani	[Fetch] Abhi Gangani	[Fetch] Abhi Gangani	U0ABD3TSCBT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABD3TSCBT-0c1d8fc6c299-48	No	No	Europe/London	2026-02-15T05:06:05.328Z
+davel.radindra2	[Fetch] Davel Radindra	Davel Atha Radindra	U0AEDAMK51P	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEDAMK51P-2270c74bd5a8-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+dev.chauhan	[Fetch] Dev	Dev Chauhan	U0AAJN8EX7Z	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAJN8EX7Z-3e88cd4848d2-48	No	No	Asia/Kolkata	2026-02-15T05:06:05.328Z
+kshipra.dhame	[Fetch] Kshipra	Kshipra Dhame	U0AAY4W1K46	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAY4W1K46-48ac1a71a902-48	No	No	Europe/London	2026-02-15T05:06:05.328Z
+prithvi.chaudhari	[Fetch] Prithvi Chaudhari	[Fetch] Prithvi Chaudhari	U0AAUQ41M8V	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAUQ41M8V-27b757278840-48	No	No	Europe/London	2026-02-15T05:06:05.328Z
+rohan.raghuwanshi	[Fetch] Rohan Raghuwanshi	[Fetch] Rohan Raghuwanshi	U0ADJLJD1EX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADJLJD1EX-36654415cd14-48	No	No	Asia/Kolkata	2026-02-15T05:06:05.328Z
+rutuja.nemane	[Fetch] Rutuja Nemane	Rutuja Nemane	U0AB92VNK19	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB92VNK19-2baafbaf4594-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+ryan.tran	[Fetch] Ryan Tran	Ryan Tran	U0AAJNAH97H	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAJNAH97H-76f4244538cd-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+tejus.gupta	[Fetch] Tejus Gupta	Tejus Gupta	U0ABQJDTMNG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABQJDTMNG-g049a2e67575-48	No	No	Asia/Kolkata	2026-02-15T05:06:05.328Z
+vinocour058	[Google Labs] Michelle Vinocour	Michelle Vinocour	U0ADBQX3FT2	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADBQX3FT2-31965a5ff098-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+obenedict	[Google] Benedict	Benedict	U0AB9PBC6PL	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB9PBC6PL-ga681af5e0f1-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+gregbaugues	[Google] Greg Baugues	gregbaugues	U0AC4302A00	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC4302A00-ge5054a151c5-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+michi.vinocour		[Google] Michelle Vinocour	U0AB5T12E20	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB5T12E20-6395ce81b4f8-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+rourkem	[Google] Rourke McNamara	rourkem	U0AB3C68TDH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB3C68TDH-g31d89e03d8a-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+rukma	[Google] Rukma Sen	rukma	U0AB6B23AKF	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB6B23AKF-g1f875b6ba4b-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+vivianjair	[Google] Vivian Jair	vivianjair	U0AB6AYEU0M	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB6AYEU0M-g757d3fcc7ba-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+lambert		[Graphite] Lambert	U0ADP3KU8KS	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADP3KU8KS-abf82486a1c8-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+ola	[Graphite] Ola	Ola	U0AD7N4P76V	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AD7N4P76V-gbd4c4c42a88-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+ronak	[Graphite] Ronak Malik	Ronak Malik	U0ACSNVM6QN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACSNVM6QN-c3824a4b64ff-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+jess	[Greylock] Jess Waterman	Jess Waterman	U0AA7DWLWEB	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AA7DWLWEB-g1e92ed1dadc-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+sshekhar	[Greylock] Shreya Shekhar	Shreya Shekhar	U0AF1D0DCBA	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF1D0DCBA-g7d1994d5c7d-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+dyi	[HeyGen] David Yi	[HeyGen] David Yi	U0AB06GAJNS	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB06GAJNS-393b9d87e356-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+jake.lu	[HeyGen] Jake Lu	[HeyGen] Jake Lu	U0ABF1U0ZGR	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABF1U0ZGR-3d5fa8b39ae2-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+jordan.duan	[HeyGen] Jordan Duan	Jordan Duan	U0ACX32183W	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACX32183W-c2a5ad234d48-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+mowens	[HeyGen] Michael Owens	Michael Owens	U0ABY3DHE2C	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABY3DHE2C-93ae305fcf30-48	No	No	America/Denver	2026-02-15T05:06:05.328Z
+raymond	[HeyGen] Raymond Ku	Raymond Ku	U0AB6BCPMK6	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB6BCPMK6-a3abc6a86d1f-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+yury	[HeyGen] Yury	[HeyGen] Yury	U0ACZ9PP0R3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACZ9PP0R3-g11e70e671c3-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+emma	[Human Capital] Emma Kirst	Emma Kirst	U0AAQ6T1K62	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAQ6T1K62-g9432069ae02-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+mlu	[Human Capital] Michelle Lu	[Human Capital] Michelle Lu	U0AEL5X6N0L	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEL5X6N0L-ga4b09db8ca4-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+yguan	[Human Capital] Ying Guan	[Human Capital] Ying Guan	U0AEEFPK3UN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEEFPK3UN-g6854a0779fa-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+claudia	[Interaction Company] Claudia Dalmau	Claudia Dalmau	U0AAL43SGCT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAL43SGCT-7ef7edf5d3f5-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+hannah	[Interaction Company] Hannah Flitman	[Interaction Company] Hannah Flitman	U0AFB7FHFUH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFB7FHFUH-09c91a5e8fac-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+soumya	[Interaction] Debojoti Das Soumya	Debojoti Das Soumya	U0AE1C45L3D	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AE1C45L3D-62954887e62c-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+mars	[Interaction] Mars	[Interaction] Mars Xiang	U0ABB649UCE	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABB649UCE-e5d7c9cc1875-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+max.lohmann	[Interaction] Max Lohmann	[Interaction] Max Lohmann	U0ABZD3HH7X	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABZD3HH7X-93cea53ec125-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+bbeaty	[Logitech] Brandon	Brandon	U0AAD6ATHPX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAD6ATHPX-g950e3e38fd9-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+crushing	[Logitech] Chad Rushing	Chad Rushing	U0ABATTBX5E	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABATTBX5E-2223a7932f04-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+dsigman	[Logitech] Daniel Sigman	Daniel Sigman	U0AAA7LLKUK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAA7LLKUK-130cdb3152c7-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+gbhoot	[Logitech] Gurpreet Bhoot	Gurpreet Bhoot	U0AAVCZ1ASK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAVCZ1ASK-dac622cbaebd-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+jhoang		[Logitech] Jonathan Hoang	U0AECCYV6AK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AECCYV6AK-g075d59ae299-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+athiraprakash282	[Mentor] Athira Prakash	Athira Prakash	U0ABHBSDPJ8	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABHBSDPJ8-02b2f73e1c30-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+avdhut.thakar		[Mentor] Avadhut Thakar	U0ABVJUUQ1X	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABVJUUQ1X-gf30c8a30ce5-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+kss.balaji1	[Mentor] Balaji Sundareshan	Balaji Sundareshan	U0AC4LDSQP5	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC4LDSQP5-51093ba6385c-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+chinatchinat123	[Mentor] Chinat Yu	Chinat Yu	U0AC0EK4N3F	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC0EK4N3F-fa77cebaaede-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+shirude.deva	[Mentor] Devashree Shirude	Devashree Shirude	U0AELQYKFJ9	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AELQYKFJ9-g0274aa9d502-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+devinwmui	[Mentor] Devin Mui	Devin Mui	U0ABRCTF58B	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABRCTF58B-7cdbfc9c86c2-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+ddmavani2003	[Mentor] Dhyey Mavani	Dhyey Mavani	U0ACYSJ496G	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACYSJ496G-daeb677b8ab5-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+dylanvu9		[Mentor] Dylan Vu	U0ADJ4D847Q	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADJ4D847Q-1b63fb882df4-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+pankhuri.nyu		[Mentor] FNU Pankhuri	U0ABB7B2AQN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABB7B2AQN-cb73bd8327f0-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+joeykohenhai	[Mentor] Joey Koh	Joey Koh	U0ACCF0HU67	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACCF0HU67-af5c1451dd3c-48	No	No	America/Los_Angeles	2026-02-15T05:06:05.328Z
+justingreenberg33		[Mentor] Justin Greenberg	U0AEK62AQ85	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEK62AQ85-g5f31b504b42-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+jyothi.v.2025	[Mentor] Jyothi Vaidyanathan	[Mentor] Jyothi Vaidyanathan	U0ABXT6EYHG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABXT6EYHG-319516eba91a-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mishrakesh3.14kartik	[Mentor] Kartikesh Mishra	Kartikesh Mishra	U0ACCA4T8AC	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACCA4T8AC-3f809c86f950-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mohansankaran	[Mentor] Mohan Sankaran	Mohan Sankaran	U0AAYR7T9NK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAYR7T9NK-86fbe6e64da4-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+navin.1211		[Mentor] navin patil	U0ADPR5BF6G	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADPR5BF6G-4b07d3339fb4-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+nihal.codes	[Mentor] Nihal Kaul	Nihal Kaul	U0ADE0H6CL8	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADE0H6CL8-b74f4d028baf-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+rajesh.while.one		[Mentor] Rajesh Kesavalalji	U0AC17SCUAG	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC17SCUAG-gf591b992782-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+saurabh.ssy	[Mentor] Saurabh Yergattikar	Saurabh Yergattikar	U0AB7ETPW1Z	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB7ETPW1Z-5c152020bc4b-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+tiennguyentony	[Mentor] Tony Nguyen	[Mentor] Tony Nguyen	U0ABA09J7AA	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABA09J7AA-a5ac1a9738ef-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+vigneshjd	[Mentor] Vignesh Durai	Vignesh Durai	U0ACCURGXRP	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACCURGXRP-4019f9aa288c-48	No	No	America/Chicago	2026-02-15T05:06:13.876Z
+bwilliamwang	[Mentor] William Wang	William Wang	U0ABQD5JY5S	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABQD5JY5S-521484a4324d-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+ryf123	[Mentor] Yifei Ren	Yifei Ren	U0ADDQH7B27	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADDQH7B27-f46fb29b4cb2-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mluat	[Midjourney] Matt Luat	Matt Luat	U0AA86T41UP	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AA86T41UP-g132dca83e74-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+amit	[Modal] Amit	[Modal] Amit	U0AEW461F6Z	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEW461F6Z-529e703f6d4a-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+felicia	[Modal] Felicia Chang	[Modal] Felicia Chang	U0AA7DYK807	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AA7DYK807-e2ec2d008a4b-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+howard	[Modal] Howard Halim	[Modal] Howard Halim	U0AEXKY4J30	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEXKY4J30-g6701f47b7ec-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+connor		[Neo] Connor Ling	U0ABWHAUQHW	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABWHAUQHW-8622e2426ee0-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+maddie	[Neo] Maddie Bernheim	Maddie Bernheim	U0AB5SPGR0C	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB5SPGR0C-4282dcf10c70-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+vincent	[Neo] Vincent Po	Vincent Po	U0AB2A27U3C	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB2A27U3C-bdcc847d70eb-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+henryweng03	[Not Organizer] Henry Weng	Henry Weng	U0AEJ8K9VU3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEJ8K9VU3-c0658a7fb1ad-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+jrodge	[NVIDIA] Jay Rodge	Jay Rodge	U0AF2GV16SE	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF2GV16SE-b1708ac70276-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+vaibhav.n.vyas		[NVIDIA] Vaibhav Vyas	U0AFDQC183B	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFDQC183B-g828d599f164-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+hshu100	[Officer] Hannah Shu	[Officer] Hannah Shu	U0AAT88DXEV	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAT88DXEV-c224bb587733-48	Yes	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+nayala17	[Officer] Nathalie Ayala	[Officer] Nathalie Ayala	U0AAEA9M8KC	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAEA9M8KC-08ef368884d2-48	Yes	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+ayush	[OpenAI] Ayush Soni	Ayush Soni	U0AF38LLN2V	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF38LLN2V-g392f6d78339-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+bonniexu	[OpenAI] Bonnie Xu	Bonnie Xu	U0AFSP357DW	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFSP357DW-e20a3c6fb889-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+cguo	[OpenAI] Charlie Guo	Charlie Guo	U0AEVHB33P0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEVHB33P0-a98412217b6d-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+ckaplan		[OpenAI] Christina Kaplan	U0AEA6XB535	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEA6XB535-707c7cb5f1e2-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+askaryar	[OpenAI] Derek Askaryar	Derek Askaryar	U0AEW2PFMB8	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEW2PFMB8-6f0c818b15eb-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+jbattad	[OpenAI] Janelle Battad	Janelle Battad	U0AAEHL2T3Q	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAEHL2T3Q-800c06cfc0b4-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+jayj	[OpenAI] Jay Jung	Jay Jung	U0AEGRW7DD0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEGRW7DD0-37ae158bd751-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+barkjess	[OpenAI] Jess Barkley	Jess Barkley	U0AFASNQ124	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFASNQ124-95e4af37faed-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+sebastian	[OpenAI] Sebastian Ingino	Sebastian Ingino	U0AFRTJJ5HN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFRTJJ5HN-gf9a978af74e-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+welton	[OpenAI] welton	Welton Wang	U0AEA6Y81AP	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEA6Y81AP-9389421d712e-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+aakritilakshman	[OpenEvidence] Aakriti Lakshman	Aakriti Lakshman	U0ABJES5XQW	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABJES5XQW-c60f40144acf-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+chasebish	[OpenEvidence] Chase	Chase	U0AE2087EHH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AE2087EHH-g845403460aa-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+kckhosla54	[OpenEvidence] Kush Khosla	[OpenEvidence] Kush Khosla	U0ABFJA2RV1	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABFJA2RV1-936eff4b208e-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+abzhong	[Organizer] Abraham Zhong	[Organizer] Abraham Zhong	U0AAQRFKTTQ	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAQRFKTTQ-gb9dc6ffa7f6-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+alainaz	[Organizer] Alaina Zhang	[Organizer] Alaina Zhang	U0AAA40PRBM	T0AAE9ZCCFL	4012665093		https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAA40PRBM-88b2cb37d032-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:13.876Z
+achinnak	[Organizer] Anamika Chinnakonda	[Organizer] Anamika Chinnakonda	U0ABM69QN3A	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABM69QN3A-6a51ba6f11ce-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+ansono	[Organizer] Anson Omar	Anson Omar	U0AAVD0D0QH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAVD0D0QH-cd38eb465d8a-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:13.876Z
+danisun	[Organizer] Danica Sun	[Organizer] Danica Sun	U0AB5QJ6FRP	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB5QJ6FRP-10ed9cbf456d-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+dcureton	[Organizer] Dean Cureton	Dean Cureton	U0ABM69JS1W	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABM69JS1W-b9a39c4d7ab9-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+emlo	[Organizer] Emma Lopez	Emma Lopez	U0AASSFR9S6	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AASSFR9S6-g6e4b6c222ed-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+erinshen	[Organizer] Erin Shen	Erin Shen	U0AB5QJ3BK3	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB5QJ3BK3-g5bf963fd927-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+glwang	[Organizer] Grace Wang	[Organizer] Grace Wang	U0AASSG4W90	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AASSG4W90-2e36cd01e609-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mjyao	[Organizer] Jerry Yao	[Organizer] Jerry Yao	U0AAQRFGDV4	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAQRFGDV4-2097d779c318-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mlho	[Organizer] Madison Ho	Madison Lea Ho	U0AA947315M	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AA947315M-d623b8774894-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:13.876Z
+mattyu	[Organizer] Matthew Yu	Matthew Yu	U0AAQRDDU6A	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAQRDDU6A-gb66621afbef-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+maxspiv	[Organizer] Maxwell Spivakovsky	Maxwell Spivakovsky	U0AAQRF9Y6S	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAQRF9Y6S-6d3523a4a042-48	No	No	America/Los_Angeles	2026-02-15T05:06:13.876Z
+yumich	[Organizer] Michael Yu	Michael Yu	U0AAPE7SS7P	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAPE7SS7P-0ec5e98113dd-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+olliesin	[Organizer] Oliver Sin	Oliver Sin	U0ABAQK1V4Y	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABAQK1V4Y-325ee55f9ddb-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:21.594Z
+sahanam7	[Organizer] Sahana Mantha	[Organizer] Sahana Mantha	U0AALFHB0UB	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AALFHB0UB-gc700194d17d-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+shrish.premkrishna	[Organizer] Shrish Premkrishna	[Organizer] Shrish Premkrishna	U0AAL3EU5CL	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAL3EU5CL-b6510ccc7892-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:21.594Z
+txg	[Organizer] Thryambak Ganapathy	[Organizer] Thryambak Ganapathy	U0ABAQA0EG0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABAQA0EG0-0431b2dcf149-48	Yes	Yes	America/Los_Angeles	2026-02-15T05:06:21.594Z
+toryn		[Organizer] Toryn Thompson	U0AAWEUS82Y	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAWEUS82Y-449990f4f418-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+trub		[Organizer] Tyler Rubenstein	U0AASSG9402	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AASSG9402-5d2027932dae-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+alex.tsai	[Perplexity] Alex Tsai	[Perplexity] Alex Tsai	U0ABHNCLF17	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABHNCLF17-37160f15a02a-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+saif.ali.raja	[Perplexity] Kesku	[Perplexity] Kesku	U0ACJF4D10U	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACJF4D10U-59b19d541fe6-48	No	No	Europe/London	2026-02-15T05:06:21.594Z
+dj.isaac	[Runpod] Dj Isaac	Dj Isaac	U0AAL70AC3E	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAL70AC3E-4c9e02e89f84-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+max.forsey	[Runpod] Max Forsey	Max Forsey	U0AAL6ZDS3E	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAL6ZDS3E-3d154ffe876e-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+zach.gulsby	[Runpod] Zach Gulsby	Zach Gulsby	U0AAD67R3A9	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAD67R3A9-gd980bf978cf-48	No	No	America/New_York	2026-02-15T05:06:21.594Z
+ezekiel.wotring	[Runpod] Zeke	Zeke	U0AECP6H8MP	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AECP6H8MP-aa48d9abc589-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+jasmine		[Suno] Jasmine Kim	U0AAU3S0YTH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAU3S0YTH-g8e8adb1124a-48	No	No	America/New_York	2026-02-15T05:06:21.594Z
+jeff.gardner	[Suno] Jeff Gardner	Jeff Gardner	U0AAVGFNHUH	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAVGFNHUH-g8896962d8eb-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+krish.chopra	[Suno] Krish Chopra	Krish Chopra	U0ADY2FFRDX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADY2FFRDX-f51ba58ed183-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+oliver.carmont	[Vercel] Oliver	Oliver	U0AC3MM90KA	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC3MM90KA-7faf1860c885-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+robin.lee	[Vercel] Robin Lee	Robin Lee	U0AB53ATXHA	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB53ATXHA-6d5483cb5782-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+tk.aloufi	[Vercel] TK	TK Aloufi	U0AB7BAA7JA	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB7BAA7JA-fb534ded946e-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aksh.patel		[Visa Mentor] Aksh Patel	U0ADZPE6V27	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADZPE6V27-f794e7a2286d-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+arushkamboj	[Visa Mentor] Arush	Arush Kamboj	U0AENS6H9JM	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AENS6H9JM-d77179e9bbf0-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+dhananjay.chaudhary	[Visa Mentor] Djay Chaudhary	Dhananjay Chaudhary	U0AF132JS8L	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF132JS8L-b2cb7b8a48aa-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+umbergers	[VISA] Megan Umberger	[VISA] Megan Umberger	U0AEGHN2NSJ	T0AAE9ZCCFL	6122517768		https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEGHN2NSJ-11222a18b9bb-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+sorozco	[Visa] Sandy Orozco	[Visa] Sandy Orozco	U0AAEH8R5FY	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAEH8R5FY-bfdfa2744cc6-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+hongyi	[Warp] Hong Yi Chen	Hong Yi Chen	U0AB10UMFG9	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB10UMFG9-g5373bff251c-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+diana	[YC] Diana Hu	Diana Hu	U0AB34T1A4X	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB34T1A4X-g36547c47b4d-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+lauren	[YC] Lauren Goldberg	Lauren Goldberg	U0AAL6TGPE0	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAL6TGPE0-ga416e9a1470-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+megan		[YC] Megan Ehrlich	U0AAA7BSMGT	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAA7BSMGT-5d75b432d4dd-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+vivian	[YC] Vivian Midha Shen	[YC] Vivian Midha Shen	U0ABC6K4UAX	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABC6K4UAX-g46c676fcd56-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+daniel	[Zingage] Daniel Tian	Daniel Tian	U0AB8KU1A2E	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB8KU1A2E-ba69ace6d6c5-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+sammy	[Zingage] Samantha Tepper	Samantha Tepper	U0AB1UTLD0B	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB1UTLD0B-85e3bdf51685-48	No	No	America/New_York	2026-02-15T05:06:21.594Z
+amanda.yiu	[Zoom] Amanda Yiu	Amanda Yiu	U0AAD6BPWVB	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAD6BPWVB-gde772cecd4a-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+ojus		[Zoom/Render]Ojus Save	U0AAEHLCVD4	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AAEHLCVD4-4d1b07cb6502-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aabhas2211	Aabhas Senapati	Aabhas Senapati	U0ABZ0AVD6C	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABZ0AVD6C-g69685e80177-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aadic	Aadi Chauhan	Aadi Chauhan	U0AF0RP4BJN	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF0RP4BJN-g9ec4e4c11b6-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aadi2	aadi shah	aadi shah	U0ABK94KPN2	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABK94KPN2-g9509fd70ed8-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aaditgupta	Aadit Gupta	Aadit Gupta	U0ABGMHLMQR	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ABGMHLMQR-424690f87bf8-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aaditisinghal14	Aaditi Singhal	Aaditi Singhal	U0AF47RFS8G	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AF47RFS8G-e4e21d5985c6-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+asbhileg	Aaditya	Aaditya	U0ADXAVCM9N	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADXAVCM9N-b8eb27e305a4-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aanikat	Aanika Rakesh Tangirala	Aanika Rakesh Tangirala	U0ACEDTNU12	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACEDTNU12-311a9362f5d5-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aanya_agrawal	Aanya K Agrawal	Aanya K Agrawal	U0AB74QQWJZ	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AB74QQWJZ-gaa17568a5cf-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aarava	Aarav Arora	Aarav Arora	U0ADNT38UJE	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADNT38UJE-62715e8efc8a-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+amatalia	Aarav Smit Matalia	Aarav Smit Matalia	U0AEHSFSXH9	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEHSFSXH9-b8f7263ecd28-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aaravwattal	Aarav Wattal	Aarav Wattal	U0ACVUFDARZ	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ACVUFDARZ-b185c4255430-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aarnavn	Aarnav Nagabhirava	Aarnav Nagabhirava	U0AFV4PAU6L	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AFV4PAU6L-gb8cd6707a07-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aaronye1001	Aaron	Aaron	U0AANR8J4DD	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AANR8J4DD-57376bbaa5ea-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+huang.aaron03	Aaron Huang	[Mentor] Aaron Huang	U0AC4T9NFEK	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AC4T9NFEK-217856666251-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aaronhtnguyen	Aaron Nguyen	Aaron Nguyen	U0AEU67UCN7	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEU67UCN7-a796f82daf94-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aniu		Aaron Niu	U0AEFH7E8G6	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0AEFH7E8G6-g347fde1c02f-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z
+aarushg464	Aarush Garg	Aarush Garg	U0ADN0X6W9K	T0AAE9ZCCFL			https://ca.slack-edge.com/T0AAE9ZCCFL-U0ADN0X6W9K-7be3ef5d2f39-48	No	No	America/Los_Angeles	2026-02-15T05:06:21.594Z

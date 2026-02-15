@@ -24,7 +24,7 @@ from agents import (
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations, search, auth, dashboard, knowledge_graph, participant_extraction
+from api.routes import qa, conversations, search, auth, dashboard, knowledge_graph, participant_extraction, slack_knowledge_graph, audio
 
 logger = setup_logger(__name__)
 
@@ -173,11 +173,13 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(dashboard.router)
+app.include_router(audio.router)
 app.include_router(qa.router)
 app.include_router(conversations.router)
 app.include_router(search.router)
 app.include_router(knowledge_graph.router)
 app.include_router(participant_extraction.router)
+app.include_router(slack_knowledge_graph.router)
 
 
 @app.get("/")

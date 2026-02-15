@@ -1,0 +1,29 @@
+# ABOUTME: Git ignore file for Fetch.ai agent directory.
+# ABOUTME: Excludes virtual environments, secrets, and cache files.
+
+# Virtual environment
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Environment variables (contains secrets)
+.env
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/

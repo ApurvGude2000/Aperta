@@ -3,6 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { Navigation } from '../components/design-system/Navigation';
 import { Card } from '../components/design-system/Card';
 import { Button } from '../components/design-system/Button';
+import { api } from '../api/client';
 
 interface GraphNode {
   id: string;
@@ -42,11 +43,14 @@ export function KnowledgeGraph() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [selectedEvent, setSelectedEvent] = useState<string>('all');
+  const [events, setEvents] = useState<any[]>([]);
+  const [graphType, setGraphType] = useState<'events' | 'slack'>('events');
   const fgRef = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Get container dimensions
+    // Get container dimensions for ForceGraph size
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -60,58 +64,96 @@ export function KnowledgeGraph() {
   }, []);
 
   useEffect(() => {
-    // Only fetch data after we have valid dimensions
-    if (dimensions.width > 0 && dimensions.height > 0) {
-      fetchGraphData();
+    // Fetch events on mount
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    // Fetch data when component mounts, event changes, or graph type changes
+    fetchGraphData();
+  }, [selectedEvent, graphType]);
+
+  const fetchEvents = async () => {
+    try {
+      const conversations = await api.getConversations();
+      setEvents(conversations || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
     }
-  }, [dimensions]);
+  };
 
   const fetchGraphData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching graph data...');
-      const response = await fetch('http://localhost:8000/knowledge-graph/');
+
+      // Determine which endpoint to call based on graph type
+      const endpoint = graphType === 'slack'
+        ? 'http://localhost:8000/knowledge-graph/slack-members'
+        : 'http://localhost:8000/knowledge-graph/';
+
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Failed to fetch graph data: ${response.statusText}`);
       }
       const data: KnowledgeGraphData = await response.json();
-      console.log('Fetched data:', { nodes: data.nodes.length, edges: data.edges.length });
-      console.log('Dimensions:', dimensions);
 
-      // Position nodes in CIRCLE around CENTER of ACTUAL visible area
-      const width = dimensions.width;
-      const height = dimensions.height;
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radius = Math.min(width, height) * 0.35; // 35% of smaller dimension
-
+      // Position nodes based on graph type
       const nodes = data.nodes.map((node, i) => {
-        // Arrange in circle around center
         const angle = (i / data.nodes.length) * 2 * Math.PI;
-        const x = centerX + Math.cos(angle) * radius;
-        const y = centerY + Math.sin(angle) * radius;
-        console.log(`Node ${i} centered at:`, { x, y, centerX, centerY });
-        return {
-          ...node,
-          x: x,
-          y: y,
-          fx: x,  // Fix at position
-          fy: y
-        };
+
+        if (graphType === 'slack') {
+          // Random scatter for Slack graph with wide spacing
+          const baseRadius = 800; // Increased from 500
+          const randomAngle = angle + (Math.random() - 0.5) * 1.5;
+          const randomRadius = baseRadius * (0.5 + Math.random() * 1.0); // 50%-150% spread
+          const x = Math.cos(randomAngle) * randomRadius;
+          const y = Math.sin(randomAngle) * randomRadius;
+
+          // Fix positions to prevent force simulation movement
+          return { ...node, x, y, fx: x, fy: y };
+        } else {
+          // Fixed circle for Events graph
+          const radius = 700;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          return { ...node, x, y, fx: x, fy: y };
+        }
       });
 
-      console.log('Setting graph data with', nodes.length, 'nodes');
+      // Filter edges based on graph type
+      let strongLinks = data.edges;
+
+      if (graphType === 'events') {
+        // Events graph: filter to top 40% strongest
+        const allWeights = data.edges.map((e: GraphEdge) => e.weight);
+        if (allWeights.length > 0) {
+          const maxWeight = Math.max(...allWeights);
+          const minWeight = Math.min(...allWeights);
+          const threshold = minWeight + (maxWeight - minWeight) * 0.6;
+          strongLinks = data.edges.filter((edge: GraphEdge) => edge.weight >= threshold);
+        }
+      }
+      // Slack graph: show all edges (already filtered by backend)
+
       setGraphData({
         nodes: nodes,
-        links: data.edges
+        links: strongLinks
       });
       setError(null);
+
+      // Auto-fit to show all nodes after graph loads
+      setTimeout(() => {
+        if (fgRef.current) {
+          fgRef.current.zoomToFit(400, 100);
+        }
+      }, 1000);
     } catch (err) {
       console.error('Error fetching knowledge graph:', err);
       setError(err instanceof Error ? err.message : 'Failed to load knowledge graph');
     } finally {
       setLoading(false);
-      console.log('Loading finished');
     }
   };
 
@@ -129,6 +171,59 @@ export function KnowledgeGraph() {
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-[#121417] mb-2">Knowledge Graph</h1>
             <p className="text-[#6B7280]">Explore your networking connections and relationships</p>
+
+            {/* Graph Type Selector */}
+            <div className="mt-6 flex items-center gap-6">
+              {/* Graph Type Toggle */}
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-[#121417]">Graph Type:</label>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setGraphType('events')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      graphType === 'events'
+                        ? 'bg-white text-[#1F3C88] shadow-sm'
+                        : 'text-[#6B7280] hover:text-[#121417]'
+                    }`}
+                  >
+                    Events
+                  </button>
+                  <button
+                    onClick={() => setGraphType('slack')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      graphType === 'slack'
+                        ? 'bg-white text-[#1F3C88] shadow-sm'
+                        : 'text-[#6B7280] hover:text-[#121417]'
+                    }`}
+                  >
+                    Slack Members
+                  </button>
+                </div>
+              </div>
+
+              {/* Event Selector (only show for Events graph) */}
+              {graphType === 'events' && (
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-[#121417]">Event:</label>
+                  <select
+                    value={selectedEvent}
+                    onChange={(e) => setSelectedEvent(e.target.value)}
+                    className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#00C2FF] bg-white"
+                  >
+                    <option value="all">All Events</option>
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.title?.replace('.txt', '').replace(/_/g, ' ') || 'Untitled Event'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <span className="text-sm text-[#9CA3AF]">
+                Showing {graphData?.nodes?.length || 0} nodes, {graphData?.edges?.length || 0} connections
+              </span>
+            </div>
           </div>
 
           {/* Layout: Graph Canvas (full width, no sidebar for now) */}
@@ -220,20 +315,52 @@ export function KnowledgeGraph() {
                     </div>
                   </div>
                 )}
-                {!loading && !error && graphData && graphData.nodes.length > 0 && (
+                {!loading && !error && graphData && graphData.nodes.length > 0 && (() => {
+                  // Find the node with the most conversations (that's "You")
+                  const maxEvents = Math.max(...graphData.nodes.map((n: any) => n.event_count));
+                  const youNodeId = graphData.nodes.find((n: any) => n.event_count === maxEvents)?.id;
+
+                  return (
                   <ForceGraph2D
                     ref={fgRef}
                     graphData={graphData}
                     nodeLabel={(node: any) => {
-                      let label = node.name || 'Unknown';
+                      const isYou = node.id === youNodeId;
+                      let label = isYou ? 'You' : (node.name || 'Unknown');
                       if (node.company) label += ` (${node.company})`;
                       if (node.title) label += ` - ${node.title}`;
+
+                      // For Slack graph, add research summary
+                      if (graphType === 'slack' && node.research_summary) {
+                        label += `\n\n${node.research_summary}`;
+                      }
+
                       return label;
                     }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                      const label = node.name || 'Unknown';
-                      const fontSize = 22 / globalScale;
-                      const nodeSize = 55;
+                      // Identify if this is "You"
+                      const isYou = node.id === youNodeId;
+                      const label = isYou ? 'You' : (node.name || 'Unknown');
+
+                      // Adjust size based on graph type
+                      const fontSize = graphType === 'slack' ? 12 / globalScale : 22 / globalScale;
+                      const nodeSize = graphType === 'slack' ? 35 : 85; // Smaller for Slack graph
+
+                      // Generate varied colors based on node ID
+                      const nodeHash = node.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+                      const hueVariation = (nodeHash % 180); // 0-180 variation for wider range
+
+                      // Different colors for "You" vs others
+                      let accentColor, bgColor;
+                      if (isYou) {
+                        accentColor = '#F59E0B'; // Gold/amber for "You"
+                        bgColor = '#FEF3C7'; // Light amber background
+                      } else {
+                        // Varied colors: blue, cyan, purple, pink, etc
+                        const hue = 180 + hueVariation; // 180-360 (cyan, blue, purple, pink)
+                        accentColor = `hsl(${hue}, 75%, 55%)`;
+                        bgColor = '#FFFFFF';
+                      }
 
                       // Draw shadow
                       ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
@@ -241,10 +368,10 @@ export function KnowledgeGraph() {
                       ctx.shadowOffsetX = 0;
                       ctx.shadowOffsetY = 4;
 
-                      // Draw main white circle
+                      // Draw main circle
                       ctx.beginPath();
                       ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
-                      ctx.fillStyle = '#FFFFFF';
+                      ctx.fillStyle = bgColor;
                       ctx.fill();
 
                       // Reset shadow
@@ -256,11 +383,11 @@ export function KnowledgeGraph() {
                       ctx.lineWidth = 2;
                       ctx.stroke();
 
-                      // Draw inner accent circle
+                      // Draw inner accent circle with varied color
                       ctx.beginPath();
                       ctx.arc(node.x, node.y, nodeSize - 8, 0, 2 * Math.PI, false);
-                      ctx.strokeStyle = '#3B82F6';
-                      ctx.lineWidth = 2.5;
+                      ctx.strokeStyle = accentColor;
+                      ctx.lineWidth = isYou ? 3.5 : 2.5; // Thicker for "You"
                       ctx.stroke();
 
                       // Draw label with shadow
@@ -303,7 +430,37 @@ export function KnowledgeGraph() {
                       ctx.fillStyle = '#1F2937';
                       ctx.fillText(label, node.x, labelY);
                     }}
-                    linkLabel={(link: any) => link.context || ''}
+                    linkLabel={(link: any) => {
+                      if (graphType === 'slack') {
+                        // Slack graph: show detailed connection reason
+                        const priority = link.priority || 'medium';
+                        const priorityIcon = priority === 'high' ? '⭐' : priority === 'medium' ? '✨' : '💫';
+                        const reason = link.reason || 'Professional connection';
+                        const weight = link.weight?.toFixed(1) || '0.0';
+
+                        return `${priorityIcon} ${priority.toUpperCase()} Priority\n\n${reason}\n\nStrength: ${weight}`;
+                      } else {
+                        // Events graph: original format
+                        const type = link.connection_type === 'same_event' ? '🎯 Same Event' :
+                                     link.connection_type === 'same_company' ? '🏢 Same Company' :
+                                     '💡 Common Topics';
+                        const context = link.context || 'Connected';
+
+                        // Vary description based on connection strength
+                        let strengthDesc = '';
+                        if (link.weight > 4.5) {
+                          strengthDesc = '⭐ Very Strong Connection';
+                        } else if (link.weight > 4.0) {
+                          strengthDesc = '🔥 Strong Connection';
+                        } else if (link.weight > 3.5) {
+                          strengthDesc = '✨ Moderate Connection';
+                        } else {
+                          strengthDesc = '💫 Light Connection';
+                        }
+
+                        return `${type}\n${context}\n${strengthDesc} (${link.weight.toFixed(1)})`;
+                      }
+                    }}
                     linkColor={(link: any) => {
                       // Color intensity based on weight
                       const baseColor = link.connection_type === 'same_company' ?
@@ -345,19 +502,22 @@ export function KnowledgeGraph() {
                     backgroundColor="transparent"
                     width={dimensions.width}
                     height={dimensions.height}
+                    zoom={0.35}
+                    minZoom={0.3}
+                    maxZoom={2.5}
                     d3AlphaDecay={0.005}
                     d3VelocityDecay={0.1}
                     d3ForceConfig={{
                       charge: {
-                        strength: -8000,
-                        distanceMax: 4000
+                        strength: graphType === 'slack' ? -5000 : -3000, // Stronger repulsion for Slack
+                        distanceMax: graphType === 'slack' ? 3000 : 2000
                       },
                       link: {
-                        distance: 600,
+                        distance: graphType === 'slack' ? 600 : 400, // More spacing for Slack
                         strength: 0.1
                       },
                       center: {
-                        strength: 0
+                        strength: 0.5 // Moderate centering to keep graph in view
                       }
                     }}
                     cooldownTime={10000}
@@ -368,7 +528,8 @@ export function KnowledgeGraph() {
                     enableZoomInteraction={true}
                     enablePanInteraction={true}
                   />
-                )}
+                  );
+                })()}
               </Card>
             </div>
 

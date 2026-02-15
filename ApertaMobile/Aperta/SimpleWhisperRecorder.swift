@@ -13,6 +13,9 @@ public class SimpleWhisperRecorder: ObservableObject {
     @Published public private(set) var isPaused = false
     @Published public private(set) var isTranscribing = false
     @Published public private(set) var transcriptionText = ""
+    @Published public private(set) var originalTranscript = ""  // Unredacted
+    @Published public private(set) var piiProtectionApplied = false
+    @Published public private(set) var piiStats = ""
     @Published public private(set) var modelLoadingProgress: Double = 0
     @Published public private(set) var isModelLoaded = false
     @Published public private(set) var error: String?
@@ -27,9 +30,19 @@ public class SimpleWhisperRecorder: ObservableObject {
     private let audioProcessor = AudioProcessor()
     private var recordingStartTime: Date?
     private var timerCancellable: AnyCancellable?
+    private var transcriptSegments: [TranscriptSegment] = []
 
     // Audio format - Whisper requires 16kHz mono
     private let sampleRate: Double = 16000
+
+    // MARK: - Recording Data
+    public struct RecordingData {
+        let audioFilePath: String
+        let transcript: String
+        let segments: [TranscriptSegment]
+        let startTime: Date
+        let endTime: Date
+    }
 
     // MARK: - Initialization
     public init() {}
@@ -211,9 +224,79 @@ public class SimpleWhisperRecorder: ObservableObject {
         // Transcribe
         try await transcribe(audioFile: recordingURL)
 
-        // Cleanup
+        // Keep the audio file (don't delete it anymore)
+        // It will be managed by EventStorageManager
+        currentRecordingURL = nil
+    }
+
+    /// Stop recording, transcribe, and return recording data with saved audio file
+    public func stopRecordingAndGetData() async throws -> RecordingData {
+        guard let startTime = recordingStartTime else {
+            throw RecorderError.notRecording
+        }
+
+        let endTime = Date()
+
+        // Stop recording
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        isRecording = false
+        isPaused = false
+
+        // Stop timer
+        stopTimer()
+        audioLevel = 0
+
+        guard let recordingURL = currentRecordingURL else {
+            throw RecorderError.noRecordingFound
+        }
+
+        // Close the audio file to finalize it
+        recordingFile = nil
+
+        // Wait a moment for file to be fully written
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+
+        // Save audio file to persistent storage
+        let savedAudioPath = try saveAudioFile(from: recordingURL)
+
+        // Transcribe
+        try await transcribe(audioFile: recordingURL)
+
+        // Clean up temp file
         try? FileManager.default.removeItem(at: recordingURL)
         currentRecordingURL = nil
+
+        // Return recording data
+        return RecordingData(
+            audioFilePath: savedAudioPath,
+            transcript: transcriptionText,
+            segments: transcriptSegments,
+            startTime: startTime,
+            endTime: endTime
+        )
+    }
+
+    /// Save audio file to persistent documents directory
+    private func saveAudioFile(from tempURL: URL) throws -> String {
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let recordingsDir = documentsURL.appendingPathComponent("recordings")
+
+        // Create recordings directory if it doesn't exist
+        if !fileManager.fileExists(atPath: recordingsDir.path) {
+            try fileManager.createDirectory(at: recordingsDir, withIntermediateDirectories: true)
+        }
+
+        // Generate unique filename
+        let filename = "\(UUID().uuidString).m4a"
+        let destinationURL = recordingsDir.appendingPathComponent(filename)
+
+        // Copy file
+        try fileManager.copyItem(at: tempURL, to: destinationURL)
+
+        // Return relative path
+        return "recordings/\(filename)"
     }
 
     // MARK: - Transcription
@@ -245,8 +328,24 @@ public class SimpleWhisperRecorder: ObservableObject {
                 return true  // Continue transcription
             }
 
-            // Extract text from segments
-            transcriptionText = result.map { $0.text }.joined(separator: " ")
+            // Extract text from segments (result is an array of TranscriptionResult)
+            let rawTranscript = result.map { $0.text }.joined(separator: " ")
+
+            // Redact PII using PII Guardian
+            print("🛡️ Running PII Guardian on transcript...")
+            let redactedTranscript = try await LLMModelManager.shared.redactPII(from: rawTranscript)
+            transcriptionText = redactedTranscript
+
+            // Save segments for Recording model
+            // Each TranscriptionResult has segments
+            transcriptSegments = result.flatMap { $0.segments }.map { segment in
+                TranscriptSegment(
+                    text: segment.text,
+                    startTime: Double(segment.start),
+                    endTime: Double(segment.end)
+                )
+            }
+
             isTranscribing = false
 
         } catch {
@@ -254,6 +353,12 @@ public class SimpleWhisperRecorder: ObservableObject {
             self.error = "Transcription failed: \(error.localizedDescription)"
             throw error
         }
+    }
+
+    // MARK: - PII Protection
+
+    private func protectTranscript(_ transcript: String) async -> ProtectedTranscript {
+        return await PIIProtectionManager.shared.protectTranscript(transcript)
     }
 
     // MARK: - Audio Level Monitoring
@@ -316,11 +421,14 @@ public enum RecorderError: LocalizedError {
     case microphonePermissionDenied
     case audioFormatError
     case noRecordingFound
+    case notRecording
 
     public var errorDescription: String? {
         switch self {
         case .modelNotLoaded:
             return "Whisper model not loaded. Call loadModel() first."
+        case .notRecording:
+            return "Not currently recording."
         case .modelInitFailed:
             return "Failed to initialize WhisperKit."
         case .microphonePermissionDenied:

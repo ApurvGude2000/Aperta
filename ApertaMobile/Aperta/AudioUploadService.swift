@@ -10,7 +10,7 @@ class AudioUploadService: NSObject, ObservableObject {
     @Published var uploadError: String?
     @Published var uploadedConversationId: String?
 
-    private let baseURL = "http://localhost:8000" // Change to your actual backend URL
+    private let baseURL = "http://10.32.82.43:8000" // Mac's IP address on local network
     private var urlSession: URLSession
 
     private override init() {
@@ -27,12 +27,12 @@ class AudioUploadService: NSObject, ObservableObject {
     /// Upload an audio file to the backend for processing
     /// - Parameters:
     ///   - audioFileURL: URL of the audio file to upload
-    ///   - eventName: Name of the event (optional)
+    ///   - eventName: Name of the event (REQUIRED - determines transcript file)
     ///   - location: Location of the event (optional)
     ///   - conversationId: Optional existing conversation ID to update
     func uploadAudioFile(
         _ audioFileURL: URL,
-        eventName: String? = nil,
+        eventName: String,
         location: String? = nil,
         conversationId: String? = nil
     ) async -> Result<AudioUploadResponse, AudioUploadError> {
@@ -63,13 +63,12 @@ class AudioUploadService: NSObject, ObservableObject {
             body.append(audioData)
             body.append("\r\n".data(using: .utf8)!)
 
-            // Add optional parameters
-            if let eventName = eventName {
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                body.append("Content-Disposition: form-data; name=\"event_name\"\r\n\r\n".data(using: .utf8)!)
-                body.append("\(eventName)\r\n".data(using: .utf8)!)
-            }
+            // Add event_name (required)
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"event_name\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(eventName)\r\n".data(using: .utf8)!)
 
+            // Add optional parameters
             if let location = location {
                 body.append("--\(boundary)\r\n".data(using: .utf8)!)
                 body.append("Content-Disposition: form-data; name=\"location\"\r\n\r\n".data(using: .utf8)!)
@@ -121,6 +120,100 @@ class AudioUploadService: NSObject, ObservableObject {
             return .success(uploadResponse)
 
         } catch {
+            DispatchQueue.main.async {
+                self.isUploading = false
+                self.uploadError = error.localizedDescription
+            }
+            return .failure(.processingError(error.localizedDescription))
+        }
+    }
+
+    /// Upload transcript text only (no audio file)
+    /// - Parameters:
+    ///   - transcriptText: PII-redacted transcript text
+    ///   - eventName: Name of the event (REQUIRED)
+    ///   - location: Location of the event (optional)
+    func uploadTranscriptOnly(
+        transcriptText: String,
+        eventName: String,
+        location: String? = nil
+    ) async -> Result<TranscriptUploadResponse, AudioUploadError> {
+        print("🚀 uploadTranscriptOnly CALLED - event: \(eventName), text length: \(transcriptText.count)")
+        print("🌐 URL: \(baseURL)/audio/append-transcript")
+
+        do {
+            // Build request
+            var request = URLRequest(url: URL(string: "\(baseURL)/audio/append-transcript")!)
+            request.httpMethod = "POST"
+
+            // Create multipart form data
+            let boundary = UUID().uuidString
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+            var body = Data()
+
+            // Add transcript text
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"transcript_text\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(transcriptText)\r\n".data(using: .utf8)!)
+
+            // Add event_name (required)
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"event_name\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(eventName)\r\n".data(using: .utf8)!)
+
+            // Add optional location
+            if let location = location {
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"location\"\r\n\r\n".data(using: .utf8)!)
+                body.append("\(location)\r\n".data(using: .utf8)!)
+            }
+
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            request.httpBody = body
+
+            // Update UI
+            DispatchQueue.main.async {
+                self.isUploading = true
+                self.uploadError = nil
+                self.uploadProgress = 0.0
+            }
+
+            // Perform request
+            print("📡 Making HTTP request NOW...")
+            let (responseData, response) = try await urlSession.data(for: request)
+            print("📡 Got response!")
+
+            // Check response
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Invalid response type")
+                return .failure(.invalidResponse)
+            }
+            print("📊 HTTP Status: \(httpResponse.statusCode)")
+
+            if httpResponse.statusCode != 200 {
+                let errorMessage = String(data: responseData, encoding: .utf8) ?? "Unknown error"
+                print("❌ Server error: \(errorMessage)")
+                return .failure(.serverError(errorMessage))
+            }
+
+            // Decode response
+            let decoder = JSONDecoder()
+            let uploadResponse = try decoder.decode(TranscriptUploadResponse.self, from: responseData)
+            print("✅ Decoded response successfully")
+
+            // Update UI
+            DispatchQueue.main.async {
+                self.isUploading = false
+                self.uploadProgress = 1.0
+            }
+
+            print("✅ Successfully uploaded transcript: \(uploadResponse.message)")
+            return .success(uploadResponse)
+
+        } catch {
+            print("❌ uploadTranscriptOnly FAILED with error: \(error)")
+            print("❌ Error type: \(type(of: error))")
             DispatchQueue.main.async {
                 self.isUploading = false
                 self.uploadError = error.localizedDescription
@@ -203,6 +296,14 @@ struct AudioRecordingInfo: Codable {
     let file_path: String
     let duration: Double
     let created_at: Date
+}
+
+struct TranscriptUploadResponse: Codable {
+    let message: String
+    let transcript_file_path: String
+    let event_name: String
+    let location: String?
+    let character_count: Int
 }
 
 // MARK: - Error Handling

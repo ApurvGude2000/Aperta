@@ -10,10 +10,23 @@ struct LoadingView: View {
                 EventCreationView()
             } else {
                 VStack(spacing: 24) {
-                    Text("Aperta")
-                        .font(.largeTitle)
-                        .bold()
-                    
+                    Spacer()
+
+                    // Aperta Logo
+                    Image("aperta-logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120)
+
+                    VStack(spacing: 4) {
+                        Text("Agent Echo")
+                            .font(.title)
+                            .bold()
+                        Text("by Aperta")
+                            .font(.title3)
+                            .foregroundColor(.gray)
+                    }
+
                     Spacer()
                     
                     VStack(spacing: 16) {

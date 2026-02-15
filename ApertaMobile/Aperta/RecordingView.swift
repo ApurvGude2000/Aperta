@@ -4,9 +4,25 @@ struct RecordingView: View {
     let event: Event
     let onEndEvent: () -> Void
     @StateObject private var recorder = SimpleWhisperRecorder()
+    @StateObject private var uploadService = AudioUploadService.shared
     @State private var showError = false
     @State private var hasRecordedOnce = false
+    @State private var currentEvent: Event
+    @State private var recordingToDelete: Recording?
+    @State private var recordingToRename: Recording?
+    @State private var newRecordingName = ""
+    @State private var showDeleteConfirmation = false
+    @State private var showRenameDialog = false
+    @State private var uploadStatus = ""
+    @State private var showUploadResult = false
+    @State private var uploadResultMessage = ""
     @Environment(\.dismiss) private var dismiss
+
+    init(event: Event, onEndEvent: @escaping () -> Void) {
+        self.event = event
+        self.onEndEvent = onEndEvent
+        _currentEvent = State(initialValue: event)
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -34,11 +50,11 @@ struct RecordingView: View {
                             .font(.subheadline)
                     }
 
-                    if !event.recordings.isEmpty {
+                    if !currentEvent.recordings.isEmpty {
                         HStack(spacing: 4) {
                             Image(systemName: "waveform.circle.fill")
                                 .font(.caption)
-                            Text("\(event.recordings.count) recording\(event.recordings.count == 1 ? "" : "s")")
+                            Text("\(currentEvent.recordings.count) recording\(currentEvent.recordings.count == 1 ? "" : "s")")
                                 .font(.subheadline)
                         }
                     }
@@ -51,7 +67,79 @@ struct RecordingView: View {
             .cornerRadius(12)
             .padding(.horizontal)
             .padding(.top)
-            
+
+            // Recordings list (if any exist)
+            if !currentEvent.recordings.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Recordings")
+                        .font(.headline)
+                        .padding(.horizontal)
+
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach(Array(currentEvent.recordings.enumerated()), id: \.element.id) { index, recording in
+                                HStack(spacing: 12) {
+                                    // Recording info
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(recording.name.isEmpty ? "Recording \(index + 1)" : recording.name)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+
+                                        HStack(spacing: 8) {
+                                            if let duration = recording.duration {
+                                                Text(formatDuration(duration))
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+
+                                            Text("\(recording.transcript.count) chars")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    // Action buttons
+                                    HStack(spacing: 8) {
+                                        Button(action: {
+                                            recordingToRename = recording
+                                            newRecordingName = recording.name.isEmpty ? "Recording \(index + 1)" : recording.name
+                                            showRenameDialog = true
+                                        }) {
+                                            Image(systemName: "pencil")
+                                                .font(.caption)
+                                                .foregroundColor(.blue)
+                                                .padding(8)
+                                                .background(Color.blue.opacity(0.1))
+                                                .cornerRadius(6)
+                                        }
+
+                                        Button(action: {
+                                            recordingToDelete = recording
+                                            showDeleteConfirmation = true
+                                        }) {
+                                            Image(systemName: "trash")
+                                                .font(.caption)
+                                                .foregroundColor(.red)
+                                                .padding(8)
+                                                .background(Color.red.opacity(0.1))
+                                                .cornerRadius(6)
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .background(Color.gray.opacity(0.05))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxHeight: 200)
+                }
+                .padding(.vertical, 8)
+            }
+
             // Fixed-height container for transcript and visual feedback
             ZStack(alignment: .center) {
                 // Background: Transcript display (always visible)
@@ -204,11 +292,83 @@ struct RecordingView: View {
                             // Stop & Save button
                             Button(action: {
                                 Task {
+                                    print("🛑 STOP & SAVE BUTTON PRESSED")
                                     do {
-                                        try await recorder.stopRecordingAndTranscribe()
+                                        // Get recording data
+                                        print("📼 Getting recording data...")
+                                        let recordingData = try await recorder.stopRecordingAndGetData()
+                                        print("📼 Got recording data: \(recordingData.transcript.count) chars")
+
+                                        // Generate default recording name
+                                        let recordingNumber = currentEvent.recordings.count + 1
+                                        let defaultName = "Recording \(recordingNumber)"
+
+                                        // Create Recording object
+                                        var newRecording = Recording(
+                                            name: defaultName,
+                                            transcript: recordingData.transcript,
+                                            segments: recordingData.segments,
+                                            audioFilePath: recordingData.audioFilePath,
+                                            startTime: recordingData.startTime
+                                        )
+
+                                        // Set end time
+                                        newRecording.endTime = recordingData.endTime
+
+                                        // Add to CURRENT event (not the original)
+                                        var updatedEvent = currentEvent
+                                        updatedEvent.recordings.append(newRecording)
+
+                                        // Save updated event
+                                        print("💾 Saving to local storage...")
+                                        try EventStorageManager.shared.saveEvent(updatedEvent)
+                                        print("💾 Saved successfully!")
+
+                                        // Update current event state
+                                        currentEvent = updatedEvent
+
                                         hasRecordedOnce = true
+
+                                        print("✅ Recording saved: \(newRecording.id)")
+                                        print("📝 Transcript (\(recordingData.transcript.count) chars): \(recordingData.transcript.prefix(100))...")
+                                        print("🎵 Audio saved at: \(recordingData.audioFilePath)")
+                                        print("📊 Event now has \(currentEvent.recordings.count) recording(s)")
+
+                                        // SET STATUS FIRST - this should show on screen
+                                        uploadStatus = "🚀 ABOUT TO UPLOAD - YOU SHOULD SEE THIS!"
+
+                                        // Wait a moment so user can see it
+                                        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+
+                                        // TEMPORARY: Skip PII redaction for debugging
+                                        uploadStatus = "🚀 NOW CALLING UPLOAD..."
+                                        print("📤 Starting upload to backend...")
+                                        print("📝 Transcript length: \(recordingData.transcript.count) chars")
+                                        print("🏷️ Event name: \(event.name)")
+
+                                        let result = await uploadService.uploadTranscriptOnly(
+                                            transcriptText: recordingData.transcript,
+                                            eventName: event.name,
+                                            location: event.location
+                                        )
+
+                                        switch result {
+                                        case .success(let response):
+                                            uploadStatus = "✅ SUCCESS: \(response.transcript_file_path)"
+                                            uploadResultMessage = "Upload successful!\n\(response.transcript_file_path)"
+                                            showUploadResult = true
+                                            print("✅ Upload successful: \(response.message)")
+                                            print("📄 Saved to: \(response.transcript_file_path)")
+                                        case .failure(let error):
+                                            uploadStatus = "❌ FAILED: \(error.localizedDescription)"
+                                            uploadResultMessage = "Upload FAILED:\n\(error.localizedDescription)"
+                                            showUploadResult = true
+                                            print("❌ Upload failed: \(error)")
+                                        }
+
                                     } catch {
                                         showError = true
+                                        print("❌ Error saving recording: \(error)")
                                     }
                                 }
                             }) {
@@ -243,11 +403,31 @@ struct RecordingView: View {
             }
             .padding(.horizontal)
             .padding(.top, 20)
-            
-            if recorder.isTranscribing {
-                HStack {
-                    ProgressView()
-                    Text("Transcribing...")
+
+            // Status indicators
+            VStack(spacing: 8) {
+                if recorder.isTranscribing {
+                    HStack {
+                        ProgressView()
+                        Text("Transcribing...")
+                    }
+                }
+
+                if uploadService.isUploading {
+                    HStack {
+                        ProgressView()
+                        Text("Uploading to cloud...")
+                    }
+                }
+
+                // ALWAYS show upload status if not empty
+                if !uploadStatus.isEmpty {
+                    Text(uploadStatus)
+                        .font(.headline)
+                        .foregroundColor(uploadStatus.contains("✅") ? .green : uploadStatus.contains("❌") ? .red : .blue)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(8)
                 }
             }
         }
@@ -255,7 +435,11 @@ struct RecordingView: View {
         .navigationBarBackButtonHidden(true)
         .task {
             do {
+                // Load Whisper model for transcription
                 try await recorder.loadModel(variant: "small")
+
+                // TEMPORARY: Skip PII model loading for debugging
+                // try await LLMModelManager.shared.loadModel()
             } catch {
                 showError = true
             }
@@ -265,6 +449,107 @@ struct RecordingView: View {
         } message: {
             Text(recorder.error ?? "Unknown error")
         }
+        .alert("Upload Result", isPresented: $showUploadResult) {
+            Button("OK") { showUploadResult = false }
+        } message: {
+            Text(uploadResultMessage)
+        }
+        .alert("Delete Recording", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                recordingToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let recording = recordingToDelete {
+                    deleteRecording(recording)
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this recording? This action cannot be undone.")
+        }
+        .sheet(isPresented: $showRenameDialog) {
+            NavigationStack {
+                VStack(spacing: 20) {
+                    Text("Rename Recording")
+                        .font(.headline)
+                        .padding(.top)
+
+                    TextField("Recording name", text: $newRecordingName)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(.horizontal)
+
+                    Spacer()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showRenameDialog = false
+                            recordingToRename = nil
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            if let recording = recordingToRename {
+                                renameRecording(recording, newName: newRecordingName)
+                            }
+                            showRenameDialog = false
+                        }
+                        .disabled(newRecordingName.isEmpty)
+                    }
+                }
+            }
+            .presentationDetents([.height(200)])
+        }
+    }
+
+    // MARK: - Helper Functions
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func deleteRecording(_ recording: Recording) {
+        var updatedEvent = currentEvent
+        updatedEvent.recordings.removeAll { $0.id == recording.id }
+
+        do {
+            try EventStorageManager.shared.saveEvent(updatedEvent)
+            currentEvent = updatedEvent
+            print("✅ Recording deleted: \(recording.id)")
+
+            // Delete audio file if it exists
+            if let audioPath = recording.audioFilePath {
+                let fileManager = FileManager.default
+                let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let audioURL = documentsURL.appendingPathComponent(audioPath)
+                try? fileManager.removeItem(at: audioURL)
+                print("🗑️ Audio file deleted: \(audioPath)")
+            }
+        } catch {
+            print("❌ Error deleting recording: \(error)")
+            showError = true
+        }
+
+        recordingToDelete = nil
+    }
+
+    private func renameRecording(_ recording: Recording, newName: String) {
+        var updatedEvent = currentEvent
+        if let index = updatedEvent.recordings.firstIndex(where: { $0.id == recording.id }) {
+            updatedEvent.recordings[index].name = newName
+
+            do {
+                try EventStorageManager.shared.saveEvent(updatedEvent)
+                currentEvent = updatedEvent
+                print("✅ Recording renamed: \(recording.id) -> \(newName)")
+            } catch {
+                print("❌ Error renaming recording: \(error)")
+                showError = true
+            }
+        }
+
+        recordingToRename = nil
     }
 }
 

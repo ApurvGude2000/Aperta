@@ -43,14 +43,6 @@ class Settings(BaseSettings):
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None
 
-    # AWS S3 / Cloud Storage Configuration
-    aws_access_key_id: Optional[str] = None
-    aws_secret_access_key: Optional[str] = None
-    s3_bucket_name: str = "networkai-transcripts"
-    s3_region: str = "us-east-1"
-    s3_endpoint_url: Optional[str] = None  # For S3-compatible services (Supabase, R2)
-    use_s3: bool = False  # Auto-set to True if AWS credentials provided
-
     # Storage Settings
     max_upload_size_mb: int = 100
     allowed_audio_formats: List[str] = ["mp3", "wav", "m4a", "ogg"]
@@ -79,10 +71,10 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./chroma_db"
     chroma_collection_name: str = "networkai_documents"
 
-    # GCS Configuration (for ChromaDB persistence)
+    # GCS Configuration (for audio, transcripts, and ChromaDB persistence)
     gcp_bucket_name: Optional[str] = None
     gcp_service_account_json: Optional[str] = None  # Path to service account JSON file
-    use_gcs_for_chroma: bool = False
+    use_gcs_for_chroma: bool = False  # Whether to backup ChromaDB to GCS
 
     # Application Configuration
     app_name: str = "NetworkAI"

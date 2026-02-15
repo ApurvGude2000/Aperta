@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// View for uploading audio files to the backend
 struct AudioUploadView: View {
@@ -80,17 +81,11 @@ struct AudioUploadView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                TextField("Event Name (optional)", text: $eventName)
+                TextField(eventName.isEmpty ? event.name : "Event Name (optional)", text: $eventName)
                     .textFieldStyle(.roundedBorder)
-                    .placeholder(when: eventName.isEmpty) {
-                        Text(event.name).foregroundColor(.gray)
-                    }
 
-                TextField("Location (optional)", text: $location)
+                TextField(location.isEmpty ? event.location : "Location (optional)", text: $location)
                     .textFieldStyle(.roundedBorder)
-                    .placeholder(when: location.isEmpty) {
-                        Text(event.location).foregroundColor(.gray)
-                    }
             }
 
             // Status
@@ -159,7 +154,7 @@ struct AudioUploadView: View {
         .padding()
         .fileImporter(
             isPresented: $showingFilePicker,
-            allowedContentTypes: [.audio, .mp3, .wav, .m4a],
+            allowedContentTypes: [.audio, .mp3, .wav, .mpeg4Audio],
             onCompletion: { result in
                 switch result {
                 case .success(let url):

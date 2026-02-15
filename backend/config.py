@@ -2,9 +2,18 @@
 Application configuration management using Pydantic Settings.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
-from typing import List, Optional, Union
+from pydantic import field_validator, ConfigDict
+from typing import List, Optional, Union, Any, Dict
 from functools import lru_cache
+from pathlib import Path
+import json
+import os
+
+# Load .env file explicitly
+from dotenv import load_dotenv
+env_file = Path(__file__).parent / ".env"
+if env_file.exists():
+    load_dotenv(env_file, override=True)
 
 
 class Settings(BaseSettings):
@@ -16,6 +25,9 @@ class Settings(BaseSettings):
     # OpenAI API Configuration (optional)
     openai_api_key: Optional[str] = None
 
+    # HuggingFace Token (required for Pyannote speaker diarization)
+    hf_token: Optional[str] = None
+
     # Fetch.ai Configuration
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None
@@ -26,13 +38,23 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "networkai-transcripts"
     s3_region: str = "us-east-1"
     s3_endpoint_url: Optional[str] = None  # For S3-compatible services (Supabase, R2)
+    use_s3: bool = False  # Auto-set to True if AWS credentials provided
 
     # Storage Settings
     max_upload_size_mb: int = 100
     allowed_audio_formats: List[str] = ["mp3", "wav", "m4a", "ogg"]
+    local_storage_path: str = "./uploads"
 
-    # Database Configuration
-    database_url: str = "sqlite+aiosqlite:///./networkai.db"
+    # Database Configuration (Supabase PostgreSQL)
+    # Format: postgresql+asyncpg://user:password@host:port/database
+    # For Supabase: postgresql+asyncpg://postgres:[PASSWORD]@[HOST]:5432/postgres
+    # Get from: Project Settings → Database → Connection string (Psycopg)
+    database_url: str = "sqlite+aiosqlite:///./networkai.db"  # Fallback for local development
+
+    # Supabase Configuration (PostgreSQL)
+    supabase_url: Optional[str] = None  # e.g., https://xxxxx.supabase.co
+    supabase_key: Optional[str] = None  # Anon public key
+    supabase_db_password: Optional[str] = None  # Database password for direct connection
 
     # ChromaDB Configuration
     chroma_persist_dir: str = "./chroma_db"
@@ -45,10 +67,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # CORS Configuration
-    cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: Optional[str] = "http://localhost:5173,http://localhost:3000"
     cors_credentials: bool = True
-    cors_methods: List[str] = ["*"]
-    cors_headers: List[str] = ["*"]
+    cors_methods: Optional[str] = "*"
+    cors_headers: Optional[str] = "*"
 
     # WebSocket Configuration
     ws_heartbeat_interval: int = 30
@@ -77,26 +99,33 @@ class Settings(BaseSettings):
         env_parse_none_str="null"
     )
 
-    @field_validator('cors_origins', mode='before')
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+    def __init__(self, **data):
+        """Initialize settings and build database URL from Supabase if provided."""
+        super().__init__(**data)
 
-    @field_validator('cors_methods', mode='before')
-    @classmethod
-    def parse_cors_methods(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+        # Convert string CORS values to lists
+        if isinstance(self.cors_origins, str):
+            self.cors_origins = [item.strip() for item in self.cors_origins.split(',') if item.strip()]
+        if isinstance(self.cors_methods, str):
+            self.cors_methods = [item.strip() for item in self.cors_methods.split(',') if item.strip()]
+        if isinstance(self.cors_headers, str):
+            self.cors_headers = [item.strip() for item in self.cors_headers.split(',') if item.strip()]
 
-    @field_validator('cors_headers', mode='before')
-    @classmethod
-    def parse_cors_headers(cls, v):
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
+        # Auto-enable S3 if AWS credentials provided
+        if self.aws_access_key_id and self.aws_secret_access_key:
+            self.use_s3 = True
+
+        # Auto-build database URL from Supabase credentials if provided
+        if self.supabase_db_password and self.supabase_url:
+            # Extract host from Supabase URL (e.g., xxxxx.supabase.co)
+            supabase_host = self.supabase_url.replace("https://", "").replace("http://", "")
+
+            # Build PostgreSQL async connection string
+            self.database_url = (
+                f"postgresql+asyncpg://postgres:{self.supabase_db_password}"
+                f"@db.{supabase_host}:5432/postgres"
+            )
+
 
 
 @lru_cache()

@@ -5,16 +5,21 @@ Critical P1 component for the audio streaming pipeline.
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import logging
 import numpy as np
 import librosa
+import uuid
+import json
 
 from db.session import get_db_session
 from db.models import Conversation, Participant
 from services.audio_processor import AudioProcessor, DiarizedTranscript
+from services.storage import StorageService, StorageConfig
+from config import settings
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -47,11 +52,22 @@ class AudioUploadResponse(BaseModel):
     """Response for audio upload and processing."""
     conversation_id: str
     transcript: DiarizedTranscriptResponse
+    audio_file_path: str
+    transcript_file_path: str
     message: str
+
+
+class StorageInfo(BaseModel):
+    """Storage configuration info."""
+    storage_type: str
+    local_path: Optional[str]
+    s3_bucket: Optional[str]
+    s3_enabled: bool
 
 
 # Initialize audio processor (lazy loaded)
 audio_processor_instance: Optional[AudioProcessor] = None
+storage_instance: Optional[StorageService] = None
 
 
 def get_audio_processor() -> AudioProcessor:
@@ -61,6 +77,32 @@ def get_audio_processor() -> AudioProcessor:
         logger.info("Initializing audio processor...")
         audio_processor_instance = AudioProcessor()
     return audio_processor_instance
+
+
+def get_storage_service() -> StorageService:
+    """Get or initialize the storage service."""
+    global storage_instance
+    if storage_instance is None:
+        logger.info("Initializing storage service...")
+
+        # Check if S3 should be used
+        use_s3 = bool(
+            settings.aws_access_key_id
+            and settings.aws_secret_access_key
+            and settings.s3_bucket_name
+        )
+
+        config = StorageConfig(
+            local_storage_path="./uploads",
+            use_s3=use_s3,
+            s3_bucket=settings.s3_bucket_name if use_s3 else None,
+            s3_region=settings.s3_region if use_s3 else None,
+            s3_access_key=settings.aws_access_key_id if use_s3 else None,
+            s3_secret_key=settings.aws_secret_access_key if use_s3 else None,
+            s3_endpoint_url=settings.s3_endpoint_url if use_s3 else None,
+        )
+        storage_instance = StorageService(config)
+    return storage_instance
 
 
 @router.post("/process", response_model=AudioUploadResponse, status_code=200)
@@ -101,27 +143,54 @@ async def process_audio_file(
 
         # Load and preprocess audio
         logger.info(f"Loading audio file: {file.filename}")
-        audio_data, sample_rate = await _load_audio_file(file)
+        audio_bytes = await file.read()
+        audio_data, sample_rate = await _load_audio_file_from_bytes(audio_bytes)
+
+        # Generate conversation ID if not provided
+        conv_id = conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
 
         # Process audio (transcribe + diarize)
         logger.info("Starting audio processing (transcription + diarization)...")
         processor = get_audio_processor()
         diarized_transcript = await processor.process_audio_stream(audio_data, sample_rate)
-
-        # Set conversation ID
-        diarized_transcript.conversation_id = conversation_id or diarized_transcript.conversation_id
-
-        # Save to database or update existing conversation
-        logger.info(f"Saving conversation to database: {diarized_transcript.conversation_id}")
-        await _save_conversation(
-            db=db,
-            diarized_transcript=diarized_transcript,
-            filename=file.filename
-        )
+        diarized_transcript.conversation_id = conv_id
 
         # Format and generate statistics
         formatted = processor.format_transcript(diarized_transcript)
         stats = processor.get_speaker_stats(diarized_transcript)
+
+        # Save audio file to storage
+        logger.info(f"Saving audio file to storage...")
+        storage = get_storage_service()
+        audio_file_path = await storage.save_audio_file(
+            file_content=audio_bytes,
+            conversation_id=conv_id,
+            filename=file.filename,
+            metadata={
+                "duration": diarized_transcript.total_duration,
+                "speaker_count": diarized_transcript.speaker_count,
+                "uploaded_at": datetime.utcnow().isoformat(),
+            },
+        )
+
+        # Save transcript to storage
+        logger.info(f"Saving transcript to storage...")
+        transcript_file_path = await storage.save_transcript(
+            transcript_text=formatted,
+            conversation_id=conv_id,
+            format="txt",
+        )
+
+        # Save to database
+        logger.info(f"Saving conversation to database: {conv_id}")
+        await _save_conversation(
+            db=db,
+            conversation_id=conv_id,
+            diarized_transcript=diarized_transcript,
+            filename=file.filename,
+            audio_file_path=audio_file_path,
+            transcript_file_path=transcript_file_path,
+        )
 
         # Build response
         segments_response = [
@@ -151,7 +220,9 @@ async def process_audio_file(
         return AudioUploadResponse(
             conversation_id=diarized_transcript.conversation_id,
             transcript=transcript_response,
-            message=f"Successfully processed audio with {diarized_transcript.speaker_count} speakers"
+            audio_file_path=audio_file_path,
+            transcript_file_path=transcript_file_path,
+            message=f"Successfully processed audio with {diarized_transcript.speaker_count} speakers and saved to storage"
         )
 
     except HTTPException:
@@ -217,6 +288,30 @@ async def get_speakers(
     except Exception as e:
         logger.error(f"Error getting speakers: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting speakers: {str(e)}")
+
+
+@router.get("/storage-info", response_model=StorageInfo)
+async def get_storage_info() -> StorageInfo:
+    """
+    Get storage configuration information.
+
+    Returns:
+        Storage info (type, paths, S3 status, etc.)
+    """
+    try:
+        storage = get_storage_service()
+        info = storage.get_storage_info()
+
+        return StorageInfo(
+            storage_type=info["storage_type"],
+            local_path=info["local_path"],
+            s3_bucket=info["s3_bucket"],
+            s3_enabled=info["s3_enabled"],
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting storage info: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting storage info: {str(e)}")
 
 
 @router.post("/identify-speakers/{conversation_id}")
@@ -295,20 +390,17 @@ def _is_audio_file(filename: str) -> bool:
     return any(filename.lower().endswith(ext) for ext in valid_extensions)
 
 
-async def _load_audio_file(file: UploadFile) -> tuple[np.ndarray, int]:
+async def _load_audio_file_from_bytes(content: bytes) -> tuple[np.ndarray, int]:
     """
-    Load audio file and convert to PCM 16kHz mono.
+    Load audio from bytes and convert to PCM 16kHz mono.
 
     Args:
-        file: Uploaded file
+        content: Raw audio file bytes
 
     Returns:
         Tuple of (audio_data, sample_rate)
     """
     try:
-        # Read file contents
-        content = await file.read()
-
         # Load with librosa (handles multiple formats)
         # target_sr=16000 for ASR models
         # mono=True for speaker diarization
@@ -335,26 +427,30 @@ async def _load_audio_file(file: UploadFile) -> tuple[np.ndarray, int]:
 
 async def _save_conversation(
     db: AsyncSession,
+    conversation_id: str,
     diarized_transcript: DiarizedTranscript,
-    filename: str
+    filename: str,
+    audio_file_path: str,
+    transcript_file_path: str,
 ) -> str:
     """
     Save conversation with diarized transcript to database.
 
     Args:
         db: Database session
+        conversation_id: Conversation ID
         diarized_transcript: Processed transcript
         filename: Original audio filename
+        audio_file_path: Path where audio was saved
+        transcript_file_path: Path where transcript was saved
 
     Returns:
         Conversation ID
     """
     try:
-        from sqlalchemy import select
-
         # Check if conversation exists
         result = await db.execute(
-            select(Conversation).where(Conversation.id == diarized_transcript.conversation_id)
+            select(Conversation).where(Conversation.id == conversation_id)
         )
         conversation = result.scalar_one_or_none()
 
@@ -364,15 +460,17 @@ async def _save_conversation(
         if conversation:
             # Update existing conversation
             conversation.transcript = formatted_transcript
+            conversation.recording_url = audio_file_path
             conversation.status = "completed"
             conversation.ended_at = datetime.utcnow()
         else:
             # Create new conversation
             conversation = Conversation(
-                id=diarized_transcript.conversation_id,
+                id=conversation_id,
                 user_id="default_user",  # TODO: Get from auth context
                 title=filename.rsplit(".", 1)[0],  # Use filename as title
                 transcript=formatted_transcript,
+                recording_url=audio_file_path,
                 status="completed",
                 started_at=datetime.utcnow(),
                 ended_at=datetime.utcnow()
@@ -397,6 +495,8 @@ async def _save_conversation(
 
         await db.commit()
         logger.info(f"Saved conversation {conversation.id}")
+        logger.info(f"  Audio saved to: {audio_file_path}")
+        logger.info(f"  Transcript saved to: {transcript_file_path}")
 
         return conversation.id
 

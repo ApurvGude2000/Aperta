@@ -2,6 +2,18 @@
 // ABOUTME: Sets up React Router for navigation between pages
 
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+<<<<<<< Updated upstream
+=======
+import { LandingEnhanced } from './pages/LandingEnhanced';
+import { Dashboard } from './pages/Dashboard';
+import { EventDetail } from './pages/EventDetail';
+import { KnowledgeGraph } from './pages/KnowledgeGraph';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
+import { Transcripts } from './pages/Transcripts';
+import { Analytics } from './pages/Analytics';
+import { Settings } from './pages/Settings';
+>>>>>>> Stashed changes
 import { ConversationList } from './pages/ConversationList';
 import { ConversationDetail } from './pages/ConversationDetail';
 import { ConversationForm } from './pages/ConversationForm';
@@ -57,6 +69,7 @@ function Navigation() {
 export function App() {
   return (
     <BrowserRouter>
+<<<<<<< Updated upstream
       <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
         <Navigation />
         <Routes>
@@ -67,6 +80,31 @@ export function App() {
           <Route path="/ask" element={<AskQuestions />} />
         </Routes>
       </div>
+=======
+      <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingEnhanced />} />
+
+        {/* Authentication */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Main App Pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+        <Route path="/transcripts" element={<Transcripts />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/settings" element={<Settings />} />
+
+        {/* Existing Features (Legacy) */}
+        <Route path="/old" element={<ConversationList />} />
+        <Route path="/conversations/new" element={<ConversationForm />} />
+        <Route path="/conversations/:id" element={<ConversationDetail />} />
+        <Route path="/conversations/:id/edit" element={<ConversationForm />} />
+        <Route path="/ask" element={<AskQuestions />} />
+      </Routes>
+>>>>>>> Stashed changes
     </BrowserRouter>
   );
 }

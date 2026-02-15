@@ -227,10 +227,9 @@ def analyze_exchange(exchange: str) -> tuple:
     # Extract recruiter info
     recruiter_info = extract_person_info(recruiter_text, "recruiter")
 
-    # Extract topics from full exchange
-    topics = extract_topics(exchange_lower)
-    candidate_info["topics"] = topics
-    recruiter_info["topics"] = topics
+    # Extract topics specific to each person's text
+    candidate_info["topics"] = extract_topics(candidate_text.lower())
+    recruiter_info["topics"] = extract_topics(recruiter_text.lower())
 
     return candidate_info, recruiter_info
 

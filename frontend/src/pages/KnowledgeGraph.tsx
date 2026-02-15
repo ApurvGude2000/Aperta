@@ -72,16 +72,16 @@ export function KnowledgeGraph() {
       }
       const data: KnowledgeGraphData = await response.json();
 
-      // Set VERY spread out initial positions in a circle pattern
+      // Set RANDOM spread out positions across the entire screen
+      // Use fx/fy to FIX positions initially
       const nodes = data.nodes.map((node, i) => {
-        const angle = (i / data.nodes.length) * 2 * Math.PI;
-        const radius = Math.min(dimensions.width, dimensions.height) * 0.35;
+        const padding = 150;
         return {
           ...node,
-          x: dimensions.width / 2 + Math.cos(angle) * radius,
-          y: dimensions.height / 2 + Math.sin(angle) * radius,
-          fx: undefined,
-          fy: undefined
+          x: padding + Math.random() * (dimensions.width - padding * 2),
+          y: padding + Math.random() * (dimensions.height - padding * 2),
+          fx: padding + Math.random() * (dimensions.width - padding * 2),
+          fy: padding + Math.random() * (dimensions.height - padding * 2)
         };
       });
 

@@ -205,8 +205,9 @@ async def get_knowledge_graph(
                         edges_set.add(edge_key)
                         topic_list = list(common_topics)[:3]
 
-                        # Calculate weight based on number of common topics (1-5 scale)
-                        weight = min(len(common_topics) * 0.5, 3.0)
+                        # Calculate weight with better distribution
+                        # 1 topic = 0.5, 2 topics = 1.0, 3 topics = 1.5, 4 topics = 2.0, etc.
+                        weight = len(common_topics) * 0.5
 
                         edge = GraphEdge(
                             source=p1_id,

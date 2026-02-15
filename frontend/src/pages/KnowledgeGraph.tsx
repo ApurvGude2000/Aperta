@@ -179,28 +179,42 @@ export function KnowledgeGraph() {
                   <ForceGraph2D
                     ref={fgRef}
                     graphData={graphData}
-                    nodeLabel={(node: any) => `${node.name}${node.company ? ` (${node.company})` : ''}`}
-                    nodeAutoColorBy="company"
+                    nodeLabel={(node: any) => {
+                      let label = node.name || 'Unknown';
+                      if (node.company) label += ` (${node.company})`;
+                      if (node.title) label += ` - ${node.title}`;
+                      return label;
+                    }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                      const label = node.name;
-                      const fontSize = 12 / globalScale;
-                      ctx.font = `${fontSize}px Sans-Serif`;
+                      const label = node.name || 'Unknown';
+                      const fontSize = 14 / globalScale;
+                      ctx.font = `bold ${fontSize}px Sans-Serif`;
                       const textWidth = ctx.measureText(label).width;
-                      const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4);
+                      const bckgDimensions = [textWidth + fontSize * 0.8, fontSize * 1.4];
 
-                      // Draw circle
+                      // Draw circle with larger size
                       ctx.beginPath();
-                      ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
-                      ctx.fillStyle = node.company ? '#00C2FF' : '#6B7280';
+                      ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI, false);
+                      ctx.fillStyle = '#00C2FF';
                       ctx.fill();
+                      ctx.strokeStyle = '#0096CC';
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
 
-                      // Draw label
+                      // Draw label background
+                      ctx.fillStyle = 'rgba(18, 20, 23, 0.9)';
+                      ctx.fillRect(
+                        node.x - bckgDimensions[0] / 2,
+                        node.y + 15,
+                        bckgDimensions[0],
+                        bckgDimensions[1]
+                      );
+
+                      // Draw label text
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
-                      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                      ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - 10 - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
-                      ctx.fillStyle = '#121417';
-                      ctx.fillText(label, node.x, node.y - 10);
+                      ctx.fillStyle = '#FFFFFF';
+                      ctx.fillText(label, node.x, node.y + 15 + bckgDimensions[1] / 2);
                     }}
                     linkLabel={(link: any) => link.context || ''}
                     linkColor={(link: any) => {

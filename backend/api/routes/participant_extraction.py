@@ -98,9 +98,19 @@ async def extract_participants_from_conversation(
         # Create participant records in database
         participants_list = []
         for idx, (key, info) in enumerate(participants_dict.items(), 1):
+            # Generate proper name or use "Unknown"
+            name = info.get("name")
+            if name in ["Job Candidate", "Company Recruiter"]:
+                if info.get("company"):
+                    name = f"{info['company']} Recruiter" if info["role"] == "recruiter" else f"Candidate ({info['company']})"
+                elif info.get("title"):
+                    name = info["title"] if info["role"] == "recruiter" else f"Candidate ({info['title']})"
+                else:
+                    name = "Unknown"
+
             participant = Participant(
                 conversation_id=conversation_id,
-                name=info.get("name", f"Person {idx}"),
+                name=name,
                 company=info.get("company"),
                 title=info.get("title"),
                 email=info.get("email"),
@@ -220,21 +230,24 @@ def extract_person_info(text: str, role: str) -> dict:
         "topics": []
     }
 
-    # Extract company
+    # Extract company - only extract if it looks like a real company name
     company_patterns = [
-        r"work(?:ing)? (?:at|for|with) ([A-Z][A-Za-z\s&]+?)(?:\.|,|'s|\?|$)",
-        r"I'm (?:with|from) ([A-Z][A-Za-z\s&]+?)(?:\.|,|\?|$)",
-        r"([A-Z][A-Za-z\s&]+?) (?:team|company|firm)",
+        r"work(?:ing)? (?:at|for|with) ([A-Z][A-Za-z\s&]+?)(?:\.|,|'s|\?|for|in)",
+        r"I'm (?:with|from) ([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)(?:\.|,|today|here)",
     ]
 
     for pattern in company_patterns:
         match = re.search(pattern, text)
         if match:
             company = match.group(1).strip()
-            if len(company) < 40 and company not in ["HR", "Engineering", "Marketing"]:
+            # Validate it looks like a company name (2-4 words, proper nouns)
+            words = company.split()
+            if (2 <= len(words) <= 4 and
+                len(company) < 30 and
+                company not in ["HR", "Engineering", "Marketing", "I was", "I noticed", "I saw", "I want"]):
                 info["company"] = company
                 if role == "recruiter":
-                    info["name"] = f"{company} Representative"
+                    info["name"] = f"{company} Recruiter"
                 break
 
     # Extract job titles

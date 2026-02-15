@@ -164,7 +164,18 @@ export function KnowledgeGraph() {
                     </div>
                   </div>
                 )}
-                {!loading && !error && graphData && (
+                {!loading && !error && graphData && graphData.nodes.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-6xl mb-4">📊</p>
+                      <p className="text-xl font-bold mb-2">No Data Yet</p>
+                      <p className="text-sm text-[#9CA3AF] mb-4">
+                        Start by adding conversations and participants to see your network graph.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {!loading && !error && graphData && graphData.nodes.length > 0 && (
                   <ForceGraph2D
                     ref={fgRef}
                     graphData={graphData}

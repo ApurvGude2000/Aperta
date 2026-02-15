@@ -374,36 +374,12 @@ async def process_event_audio(
         formatted = processor.format_transcript(diarized_transcript)
         stats = processor.get_speaker_stats(diarized_transcript)
 
-        # Save audio file to storage
-        logger.info(f"Saving audio file to storage for event: {event_name}")
-        storage = get_storage_service()
-
-        # Generate unique filename with timestamp
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        file_ext = file.filename.split(".")[-1].lower()
-        unique_filename = f"{timestamp}.{file_ext}"
-
-        audio_file_path = await storage.save_audio_file(
-            file_content=audio_bytes,
-            event_name=event_name,
-            filename=unique_filename,
-            metadata={
-                "duration": diarized_transcript.total_duration,
-                "speaker_count": diarized_transcript.speaker_count,
-                "event_name": event_name,
-                "location": location,
-                "uploaded_at": datetime.utcnow().isoformat(),
-                "original_filename": file.filename,
-            },
-        )
-
-        # Run PII redaction on transcript
-        logger.info(f"Running PII Guardian to protect transcript...")
-        privacy_agent = PrivacyGuardianAgent()
-        redacted_transcript = await privacy_agent.redact_transcript(formatted)
+        # NOTE: Audio files are NOT saved for privacy reasons
+        # PII redaction happens on mobile before upload
 
         # Append transcript to event's transcript file
         logger.info(f"Appending transcript to event file: transcripts/{event_name}.txt")
+        storage = get_storage_service()
         transcript_file_path = await storage.append_transcript(
             transcript_text=formatted,
             event_name=event_name,
@@ -413,18 +389,21 @@ async def process_event_audio(
         logger.info("Running AI agents for analysis...")
         ai_analysis = await _run_audio_analysis_agents(formatted)
 
+        # No audio file saved (privacy)
+        audio_file_path = None
+
         # Save to database
         recording_id = None
         transcription_id = None
         if db:
             try:
-                logger.info(f"Saving audio and transcription to database: {conv_id}")
+                logger.info(f"Saving transcription to database: {conv_id}")
                 recording_id, transcription_id = await _save_event_audio_with_analysis(
                     db=db,
                     conversation_id=conv_id,
                     diarized_transcript=diarized_transcript,
                     filename=file.filename,
-                    audio_file_path=audio_file_path,
+                    audio_file_path=None,  # Not saved for privacy
                     transcript_file_path=transcript_file_path,
                     audio_bytes=audio_bytes,
                     event_name=event_name,
@@ -432,15 +411,15 @@ async def process_event_audio(
                     ai_analysis=ai_analysis,
                 )
             except Exception as e:
-                logger.warning(f"Failed to save to database: {e}. Audio files still saved to filesystem.")
+                logger.warning(f"Failed to save to database: {e}. Transcript still saved to GCS.")
         else:
-            logger.info("Database unavailable - audio files saved to filesystem only")
+            logger.info("Database unavailable - transcript saved to GCS only")
 
         # Build response
         audio_recording = AudioRecordingResponse(
             id=recording_id or f"rec_{uuid.uuid4().hex[:12]}",
             conversation_id=conv_id,
-            file_path=audio_file_path,
+            file_path="",  # No audio file for privacy
             file_size=len(audio_bytes),
             file_format=file.filename.split(".")[-1].lower(),
             duration=diarized_transcript.total_duration,
@@ -576,6 +555,50 @@ async def get_storage_info() -> StorageInfo:
         raise HTTPException(status_code=500, detail=f"Error getting storage info: {str(e)}")
 
 
+@router.post("/append-transcript")
+async def append_transcript_only(
+    transcript_text: str = Form(...),
+    event_name: str = Form(...),
+    location: Optional[str] = Form(None),
+):
+    """
+    Append transcript text to event's transcript file.
+    NO audio file required - transcript is already generated on mobile.
+    PII redaction happens on mobile before upload.
+
+    Args:
+        transcript_text: Pre-redacted transcript text from mobile
+        event_name: Name of the event (determines transcript file)
+        location: Event location (optional)
+
+    Returns:
+        Success message with transcript file path
+    """
+    try:
+        logger.info(f"Appending transcript to event: {event_name}")
+
+        # Append to transcript file
+        storage = get_storage_service()
+        transcript_file_path = await storage.append_transcript(
+            transcript_text=transcript_text,
+            event_name=event_name,
+        )
+
+        return {
+            "message": f"Successfully appended transcript to {event_name}",
+            "transcript_file_path": transcript_file_path,
+            "event_name": event_name,
+            "location": location,
+            "character_count": len(transcript_text)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error appending transcript: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error appending transcript: {str(e)}")
+
+
 @router.post("/identify-speakers/{conversation_id}")
 async def identify_speakers(
     conversation_id: str,
@@ -698,7 +721,7 @@ async def _save_conversation(
     conversation_id: str,
     diarized_transcript: DiarizedTranscript,
     filename: str,
-    audio_file_path: str,
+    audio_file_path: Optional[str],
     transcript_file_path: str,
 ) -> str:
     """
@@ -709,7 +732,7 @@ async def _save_conversation(
         conversation_id: Conversation ID
         diarized_transcript: Processed transcript
         filename: Original audio filename
-        audio_file_path: Path where audio was saved
+        audio_file_path: Path where audio was saved (None if not saved for privacy)
         transcript_file_path: Path where transcript was saved
 
     Returns:
@@ -728,7 +751,7 @@ async def _save_conversation(
         if conversation:
             # Update existing conversation
             conversation.transcript = formatted_transcript
-            conversation.recording_url = audio_file_path
+            conversation.recording_url = audio_file_path or ""  # Empty if not saved
             conversation.status = "completed"
             conversation.ended_at = datetime.utcnow()
         else:
@@ -738,7 +761,7 @@ async def _save_conversation(
                 user_id="default_user",  # TODO: Get from auth context
                 title=filename.rsplit(".", 1)[0],  # Use filename as title
                 transcript=formatted_transcript,
-                recording_url=audio_file_path,
+                recording_url=audio_file_path or "",  # Empty if not saved
                 status="completed",
                 started_at=datetime.utcnow(),
                 ended_at=datetime.utcnow()
@@ -763,7 +786,10 @@ async def _save_conversation(
 
         await db.commit()
         logger.info(f"Saved conversation {conversation.id}")
-        logger.info(f"  Audio saved to: {audio_file_path}")
+        if audio_file_path:
+            logger.info(f"  Audio saved to: {audio_file_path}")
+        else:
+            logger.info(f"  Audio NOT saved (privacy)")
         logger.info(f"  Transcript saved to: {transcript_file_path}")
 
         return conversation.id
@@ -860,7 +886,7 @@ async def _save_event_audio_with_analysis(
     conversation_id: str,
     diarized_transcript: DiarizedTranscript,
     filename: str,
-    audio_file_path: str,
+    audio_file_path: Optional[str],
     transcript_file_path: str,
     audio_bytes: bytes,
     event_name: Optional[str],
@@ -875,7 +901,7 @@ async def _save_event_audio_with_analysis(
         conversation_id: Conversation ID
         diarized_transcript: Processed transcript
         filename: Original audio filename
-        audio_file_path: Path where audio was saved
+        audio_file_path: Path where audio was saved (None if not saved for privacy)
         transcript_file_path: Path where transcript was saved
         audio_bytes: Raw audio bytes
         event_name: Event name
@@ -910,7 +936,7 @@ async def _save_event_audio_with_analysis(
         # Create AudioRecording entry
         recording = AudioRecording(
             conversation_id=conversation_id,
-            file_path=audio_file_path,
+            file_path=audio_file_path or "",  # Empty if not saved for privacy
             file_size=len(audio_bytes),
             file_format=filename.split(".")[-1].lower(),
             duration=diarized_transcript.total_duration,

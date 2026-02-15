@@ -4,10 +4,37 @@ struct PastEventsView: View {
     @State private var events: [Event] = []
     @State private var eventToDelete: Event?
     @State private var showDeleteConfirmation = false
+    @State private var searchText = ""
+
+    private var filteredEvents: [Event] {
+        if searchText.isEmpty {
+            return events
+        } else {
+            return events.filter { event in
+                event.name.localizedCaseInsensitiveContains(searchText) ||
+                event.location.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
 
     var body: some View {
         List {
-            if events.isEmpty {
+            if filteredEvents.isEmpty && !searchText.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                    Text("No events found")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                    Text("Try a different search term")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
+                .listRowBackground(Color.clear)
+            } else if events.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "calendar.badge.clock")
                         .font(.system(size: 60))
@@ -23,7 +50,7 @@ struct PastEventsView: View {
                 .padding(.top, 100)
                 .listRowBackground(Color.clear)
             } else {
-                ForEach(events) { event in
+                ForEach(filteredEvents) { event in
                     NavigationLink(destination: EventDetailView(event: event)) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(event.name)
@@ -53,6 +80,7 @@ struct PastEventsView: View {
             }
         }
         .navigationTitle("Past Events")
+        .searchable(text: $searchText, prompt: "Search events by name or location")
         .onAppear {
             loadEvents()
         }
@@ -92,27 +120,48 @@ struct PastEventsView: View {
 
 struct EventDetailView: View {
     let event: Event
-    
+    @State private var showRecordingView = false
+    @State private var refreshedEvent: Event?
+
+    private var displayEvent: Event {
+        refreshedEvent ?? event
+    }
+
     var body: some View {
         List {
             Section("Event Details") {
-                LabeledContent("Name", value: event.name)
-                LabeledContent("Location", value: event.location)
-                LabeledContent("Date", value: event.date, format: .dateTime)
+                LabeledContent("Name", value: displayEvent.name)
+                LabeledContent("Location", value: displayEvent.location)
+                LabeledContent("Date", value: displayEvent.date, format: .dateTime)
             }
-            
-            Section("Recordings") {
-                if event.recordings.isEmpty {
+
+            Section {
+                Button(action: {
+                    showRecordingView = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.blue)
+                        Text("Add New Recording")
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                }
+            }
+
+            Section("Recordings (\(displayEvent.recordings.count))") {
+                if displayEvent.recordings.isEmpty {
                     Text("No recordings yet")
                         .foregroundColor(.gray)
+                        .italic()
                 } else {
-                    ForEach(event.recordings) { recording in
+                    ForEach(displayEvent.recordings) { recording in
                         NavigationLink(destination: TranscriptDetailView(recording: recording)) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Recording \(recording.startTime, style: .time)")
                                     .font(.headline)
                                 if let duration = recording.duration {
-                                    Text("Duration: \(Int(duration))s")
+                                    Text("Duration: \(formatDuration(duration))")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -122,7 +171,33 @@ struct EventDetailView: View {
                 }
             }
         }
-        .navigationTitle(event.name)
+        .navigationTitle(displayEvent.name)
+        .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(isPresented: $showRecordingView) {
+            RecordingView(event: displayEvent, onEndEvent: {
+                showRecordingView = false
+                refreshEvent()
+            })
+        }
+        .onAppear {
+            refreshEvent()
+        }
+    }
+
+    private func refreshEvent() {
+        // Reload the event from storage to get updated recordings
+        do {
+            let allEvents = try EventStorageManager.shared.loadAllEvents()
+            refreshedEvent = allEvents.first { $0.id == event.id }
+        } catch {
+            print("❌ Failed to refresh event: \(error)")
+        }
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let minutes = Int(duration) / 60
+        let seconds = Int(duration) % 60
+        return "\(minutes)m \(seconds)s"
     }
 }
 

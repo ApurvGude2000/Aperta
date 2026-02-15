@@ -73,15 +73,16 @@ export function KnowledgeGraph() {
       const data: KnowledgeGraphData = await response.json();
 
       // Set RANDOM spread out positions across the entire screen
-      // Use fx/fy to FIX positions initially
+      const padding = 150;
       const nodes = data.nodes.map((node, i) => {
-        const padding = 150;
+        const x = padding + Math.random() * (dimensions.width - padding * 2);
+        const y = padding + Math.random() * (dimensions.height - padding * 2);
         return {
           ...node,
-          x: padding + Math.random() * (dimensions.width - padding * 2),
-          y: padding + Math.random() * (dimensions.height - padding * 2),
-          fx: padding + Math.random() * (dimensions.width - padding * 2),
-          fy: padding + Math.random() * (dimensions.height - padding * 2)
+          x: x,
+          y: y,
+          fx: x,  // Fix at initial position
+          fy: y
         };
       });
 

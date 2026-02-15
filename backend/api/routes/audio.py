@@ -105,11 +105,22 @@ def get_storage_service() -> StorageService:
     return storage_instance
 
 
+async def _get_optional_db_session() -> Optional[AsyncSession]:
+    """Get database session, but fail gracefully if database is unavailable."""
+    try:
+        from db.session import get_db_session as get_db
+        async for session in get_db():
+            return session
+    except Exception as e:
+        logger.warning(f"Database session unavailable, running in offline mode: {e}")
+        return None
+
+
 @router.post("/process", response_model=AudioUploadResponse, status_code=200)
 async def process_audio_file(
     file: UploadFile = File(...),
     conversation_id: Optional[str] = None,
-    db: AsyncSession = Depends(get_db_session)
+    db: Optional[AsyncSession] = Depends(lambda: _get_optional_db_session())
 ) -> AudioUploadResponse:
     """
     Upload and process audio file for transcription and speaker diarization.
@@ -181,16 +192,22 @@ async def process_audio_file(
             format="txt",
         )
 
-        # Save to database
-        logger.info(f"Saving conversation to database: {conv_id}")
-        await _save_conversation(
-            db=db,
-            conversation_id=conv_id,
-            diarized_transcript=diarized_transcript,
-            filename=file.filename,
-            audio_file_path=audio_file_path,
-            transcript_file_path=transcript_file_path,
-        )
+        # Save to database (optional - fails gracefully if database unavailable)
+        if db:
+            try:
+                logger.info(f"Saving conversation to database: {conv_id}")
+                await _save_conversation(
+                    db=db,
+                    conversation_id=conv_id,
+                    diarized_transcript=diarized_transcript,
+                    filename=file.filename,
+                    audio_file_path=audio_file_path,
+                    transcript_file_path=transcript_file_path,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save to database: {e}. Audio files still saved to filesystem.")
+        else:
+            logger.info("Database unavailable - audio files saved to filesystem only")
 
         # Build response
         segments_response = [
@@ -235,7 +252,7 @@ async def process_audio_file(
 @router.get("/speakers/{conversation_id}")
 async def get_speakers(
     conversation_id: str,
-    db: AsyncSession = Depends(get_db_session)
+    db: Optional[AsyncSession] = Depends(lambda: _get_optional_db_session())
 ):
     """
     Get speaker information for a conversation.
@@ -247,6 +264,9 @@ async def get_speakers(
     Returns:
         List of speakers with their statistics
     """
+    if not db:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
+
     try:
         from sqlalchemy import select
 
@@ -318,7 +338,7 @@ async def get_storage_info() -> StorageInfo:
 async def identify_speakers(
     conversation_id: str,
     speaker_info: dict,
-    db: AsyncSession = Depends(get_db_session)
+    db: Optional[AsyncSession] = Depends(lambda: _get_optional_db_session())
 ):
     """
     Manually identify speakers in a conversation.
@@ -339,6 +359,9 @@ async def identify_speakers(
     Returns:
         Updated conversation with identified speakers
     """
+    if not db:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
+
     try:
         from sqlalchemy import select
 
@@ -401,11 +424,14 @@ async def _load_audio_file_from_bytes(content: bytes) -> tuple[np.ndarray, int]:
         Tuple of (audio_data, sample_rate)
     """
     try:
+        import io
+
         # Load with librosa (handles multiple formats)
         # target_sr=16000 for ASR models
         # mono=True for speaker diarization
+        # Need to wrap bytes in BytesIO for librosa.load()
         audio_data, sample_rate = librosa.load(
-            content,
+            io.BytesIO(content),
             sr=16000,
             mono=True
         )

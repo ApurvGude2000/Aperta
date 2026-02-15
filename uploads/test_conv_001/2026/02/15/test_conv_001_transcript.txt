@@ -1,0 +1,3 @@
+Speaker 1: Hello everyone, welcome to the meeting.
+Speaker 2: Thanks for having us. Let's discuss the agenda.
+Speaker 1: Sure, first item is about Q1 results.

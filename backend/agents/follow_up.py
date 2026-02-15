@@ -2,7 +2,7 @@
 Follow-Up Agent - Generates personalized follow-up messages (LinkedIn/Email) for each person met.
 Runs after Context Understanding Agent completes, once per person.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import json
 import re
 from .base import ClaudeBaseAgent
@@ -80,6 +80,93 @@ JSON OUTPUT:"""
         )
 
         logger.info("Follow-Up Agent initialized")
+
+    async def execute(
+        self,
+        user_question: str = "",
+        user_id: str = "",
+        conversation_data: Optional[list] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Q&A-compatible execute: analyze conversations and suggest follow-ups.
+
+        Args:
+            user_question: User's question about follow-ups
+            user_id: User identifier
+            conversation_data: List of conversation dicts from GCS
+
+        Returns:
+            Dict with follow-up suggestions
+        """
+        try:
+            print(f"\n    [FOLLOWUP_AGENT] Processing: '{user_question}'")
+            print(f"    [FOLLOWUP_AGENT] Conversations provided: {len(conversation_data) if conversation_data else 0}")
+            logger.info(f"Follow-up agent processing: {user_question}")
+
+            # Build conversation context
+            conv_text = ""
+            if conversation_data:
+                for i, conv in enumerate(conversation_data, 1):
+                    title = conv.get("title", f"Conversation {i}")
+                    transcript = conv.get("transcript", "")
+                    if len(transcript) > 2000:
+                        transcript = transcript[:2000] + "... [truncated]"
+                    conv_text += f"\n--- {title} ---\n{transcript}\n"
+
+            prompt = f"""Based on these networking conversations, identify who the user should follow up with and generate follow-up suggestions.
+
+CONVERSATION DATA:
+{conv_text if conv_text else "No conversation data available."}
+
+USER QUESTION: {user_question}
+
+OUTPUT FORMAT (JSON ONLY):
+{{
+  "follow_ups": [
+    {{
+      "person_name": "Name",
+      "reason": "Why to follow up (1 sentence)",
+      "priority": "high/medium/low",
+      "suggested_message": "Brief follow-up message suggestion (1-2 sentences)"
+    }}
+  ],
+  "summary": "Brief overview of follow-up recommendations (1-2 sentences)"
+}}
+
+JSON OUTPUT:"""
+
+            print(f"    [FOLLOWUP_AGENT] Calling Claude API (model: {self.model})...")
+            response = await super().execute(
+                prompt=prompt,
+                max_tokens=1500,
+                temperature=0.5
+            )
+            print(f"    [FOLLOWUP_AGENT] Claude response status: {response.get('status', 'unknown')}")
+
+            result_text = response.get("response", "{}")
+            print(f"    [FOLLOWUP_AGENT] Raw response: {result_text[:200]}")
+            parsed = self._parse_json_response(result_text)
+
+            # Validate
+            if "follow_ups" not in parsed:
+                parsed["follow_ups"] = []
+            if "summary" not in parsed:
+                parsed["summary"] = ""
+
+            print(f"    [FOLLOWUP_AGENT] Generated {len(parsed.get('follow_ups', []))} follow-up suggestions")
+            return parsed
+
+        except Exception as e:
+            print(f"    [FOLLOWUP_AGENT] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+            logger.error(f"Follow-up agent error: {e}")
+            return {
+                "follow_ups": [],
+                "summary": "Unable to generate follow-up suggestions at this time.",
+                "error": str(e)
+            }
 
     async def generate_messages(
         self,

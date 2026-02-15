@@ -96,7 +96,16 @@ async def ask_question(
     Returns:
         Question answer with routing information
     """
+    print(f"\n{'#'*60}")
+    print(f"[QA_ROUTE] /qa/ask called")
+    print(f"[QA_ROUTE] Question: '{request.question}'")
+    print(f"[QA_ROUTE] user_id: {request.user_id}, conversation_id: {request.conversation_id}")
+    print(f"[QA_ROUTE] use_rag: {request.use_rag}")
+    print(f"[QA_ROUTE] qa_orchestrator_instance: {qa_orchestrator_instance is not None}")
+    print(f"{'#'*60}")
+
     if not qa_orchestrator_instance:
+        print(f"[QA_ROUTE] ERROR: Q&A orchestrator not initialized!")
         raise HTTPException(
             status_code=500,
             detail="Q&A orchestrator not initialized. Please check server startup."
@@ -106,19 +115,23 @@ async def ask_question(
 
     try:
         # Get or create QA session
+        print(f"[QA_ROUTE] Creating QA session in DB...")
         session = QASession(
             conversation_id=request.conversation_id,
             user_id=request.user_id
         )
         db.add(session)
         await db.flush()
+        print(f"[QA_ROUTE] QA session created: {session.id}")
 
         # Use the new QA orchestrator to answer the question
+        print(f"[QA_ROUTE] Calling qa_orchestrator.answer_question()...")
         logger.info(f"Processing question: {request.question}")
         result = await qa_orchestrator_instance.answer_question(
             user_question=request.question,
             user_id=request.user_id
         )
+        print(f"[QA_ROUTE] Orchestrator returned. Result keys: {list(result.keys())}")
 
         # Extract results
         final_answer = result.get("answer", "Unable to process your question.")
@@ -156,6 +169,11 @@ async def ask_question(
         )
         
     except Exception as e:
+        print(f"\n[QA_ROUTE] !!! EXCEPTION in /qa/ask !!!")
+        print(f"[QA_ROUTE] Error type: {type(e).__name__}")
+        print(f"[QA_ROUTE] Error: {e}")
+        import traceback
+        traceback.print_exc()
         await db.rollback()
         logger.error(f"Error processing question: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")

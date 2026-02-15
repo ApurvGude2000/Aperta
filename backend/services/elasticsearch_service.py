@@ -174,8 +174,12 @@ class ElasticsearchService:
         """
         try:
             # Generate query embedding
+            print(f"      [ELASTICSEARCH] Searching for: '{query}'")
+            print(f"      [ELASTICSEARCH] ES host: {self.es_host}, index: {self.index_name}")
             logger.info(f"Searching conversations for: {query}")
+            print(f"      [ELASTICSEARCH] Generating embedding via JINA...")
             query_embedding = await embedding_service.embed_text(query)
+            print(f"      [ELASTICSEARCH] Embedding generated: {query_embedding is not None}, length: {len(query_embedding) if query_embedding else 0}")
 
             if not query_embedding:
                 logger.error("Failed to generate query embedding")
@@ -236,6 +240,9 @@ class ElasticsearchService:
             return results
 
         except Exception as e:
+            print(f"      [ELASTICSEARCH] SEARCH ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Error searching conversations: {e}")
             return []
 

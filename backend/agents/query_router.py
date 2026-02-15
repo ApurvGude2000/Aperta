@@ -27,7 +27,7 @@ class QueryRouterAgent(ClaudeBaseAgent):
 AVAILABLE AGENTS:
 1. conversation_retrieval - Search and fetch specific conversations/quotes
 2. insight - Analyze patterns, trends, statistics across all data
-3. followup - Information about follow-up messages and their status
+3. followup - Generate follow-up messages and suggest who to follow up with
 4. recommendation - Suggest next actions, prioritize contacts
 
 OUTPUT FORMAT (JSON ONLY):
@@ -43,6 +43,7 @@ ROUTING RULES:
 - Pattern questions ("What topics come up most?") → insight only
 - Prioritization ("Who should I contact?") → conversation_retrieval + recommendation
 - Comparison ("Compare Alice vs Bob") → conversation_retrieval + insight
+- Follow-up questions ("Who should I follow up with?") → conversation_retrieval + recommendation
 - Complex multi-part → multiple agents, sequential execution
 - If unsure, default to conversation_retrieval
 
@@ -71,31 +72,40 @@ JSON OUTPUT:"""
             Routing decision with agents_needed, execution_mode, question_type
         """
         try:
+            print(f"\n  [QUERY_ROUTER] Routing question: '{user_question}'")
             logger.info(f"Routing question: {user_question}")
 
             # Build prompt
             prompt = user_question
 
             # Execute with Claude
+            print(f"  [QUERY_ROUTER] Calling Claude API (model: {self.model})...")
             response = await self.execute(
                 prompt=prompt,
                 context=context,
                 max_tokens=500,
                 temperature=0.2  # Low temperature for consistent routing
             )
+            print(f"  [QUERY_ROUTER] Claude response status: {response.get('status', 'unknown')}")
 
             # Parse JSON response
             result_text = response.get("response", "{}")
+            print(f"  [QUERY_ROUTER] Raw response text: {result_text[:300]}")
             routing = self._parse_json_response(result_text)
+            print(f"  [QUERY_ROUTER] Parsed routing (pre-validation): {routing}")
 
             # Validate routing
             routing = self._validate_routing(routing)
+            print(f"  [QUERY_ROUTER] Validated routing: agents={routing['agents_needed']}, mode={routing['execution_mode']}")
 
             logger.info(f"Routing decision: {routing['agents_needed']} ({routing['execution_mode']})")
 
             return routing
 
         except Exception as e:
+            print(f"  [QUERY_ROUTER] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Query router error: {e}, defaulting to conversation_retrieval")
             return {
                 "agents_needed": ["conversation_retrieval"],

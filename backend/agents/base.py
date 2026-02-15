@@ -83,6 +83,10 @@ class ClaudeBaseAgent:
             messages[0]["content"] = f"{context_str}\n\n{prompt}"
 
         try:
+            print(f"      [BASE_AGENT:{self.name}] Executing with prompt length: {len(prompt)}")
+            print(f"      [BASE_AGENT:{self.name}] Model: {self.model}, max_tokens: {max_tokens}, temp: {temperature}")
+            print(f"      [BASE_AGENT:{self.name}] API key present: {bool(self.client.api_key)}")
+            print(f"      [BASE_AGENT:{self.name}] API key prefix: {str(self.client.api_key)[:12]}..." if self.client.api_key else "      [BASE_AGENT] No API key!")
             logger.info(f"Executing agent {self.name} with prompt length: {len(prompt)}")
 
             if stream:
@@ -93,14 +97,19 @@ class ClaudeBaseAgent:
                     start_time=start_time
                 )
             else:
-                return await self._execute_complete(
+                result = await self._execute_complete(
                     messages=messages,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     start_time=start_time
                 )
+                print(f"      [BASE_AGENT:{self.name}] Execution completed successfully")
+                return result
 
         except Exception as e:
+            print(f"      [BASE_AGENT:{self.name}] EXECUTION ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Error executing agent {self.name}: {e}")
             raise
 

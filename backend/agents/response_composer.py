@@ -65,10 +65,16 @@ RESPONSE:"""
             Composed response as markdown text
         """
         try:
+            print(f"\n    [RESPONSE_COMPOSER] Composing response for: '{user_question}'")
+            print(f"    [RESPONSE_COMPOSER] Agent outputs to synthesize: {list(agent_outputs.keys())}")
+            for agent_name, output in agent_outputs.items():
+                if isinstance(output, dict) and "error" in output:
+                    print(f"    [RESPONSE_COMPOSER] WARNING: {agent_name} has error: {output['error']}")
             logger.info(f"Composing response for: {user_question}")
 
             # Build prompt
             agent_outputs_json = json.dumps(agent_outputs, indent=2)
+            print(f"    [RESPONSE_COMPOSER] Agent outputs JSON length: {len(agent_outputs_json)} chars")
 
             prompt = f"""Synthesize this information into a clear answer.
 
@@ -81,20 +87,27 @@ AGENT OUTPUTS:
 Create a natural, helpful response that directly answers the question."""
 
             # Execute with Claude
+            print(f"    [RESPONSE_COMPOSER] Calling Claude API (model: {self.model})...")
             response = await self.execute(
                 prompt=prompt,
                 max_tokens=1500,
                 temperature=0.6  # Balanced creativity
             )
+            print(f"    [RESPONSE_COMPOSER] Claude response status: {response.get('status', 'unknown')}")
 
             # Extract composed response
             composed_text = response.get("response", "").strip()
 
+            print(f"    [RESPONSE_COMPOSER] Composed response: {len(composed_text)} chars")
+            print(f"    [RESPONSE_COMPOSER] Preview: {composed_text[:150]}...")
             logger.info(f"Composed response: {len(composed_text)} chars")
 
             return composed_text
 
         except Exception as e:
+            print(f"    [RESPONSE_COMPOSER] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Response composition error: {e}")
             return self._get_fallback_response(user_question, agent_outputs, str(e))
 

@@ -68,55 +68,77 @@ JSON OUTPUT:"""
         self,
         user_question: str,
         user_id: str,
+        conversation_data: Optional[list] = None,
         time_range: str = "all_time",
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Generate insights from aggregated data.
+        Generate insights from conversation data.
 
         Args:
             user_question: User's question
             user_id: User identifier
+            conversation_data: List of conversation dicts from GCS (passed by orchestrator)
             time_range: Time range for analysis ("last_30_days", "all_time")
 
         Returns:
             Dict with insights, recommendations, and key metrics
         """
         try:
+            print(f"\n    [INSIGHT_AGENT] Generating insights for: '{user_question}'")
+            print(f"    [INSIGHT_AGENT] user_id: {user_id}")
+            print(f"    [INSIGHT_AGENT] Conversation data provided: {conversation_data is not None}")
+            if conversation_data:
+                print(f"    [INSIGHT_AGENT] Number of conversations: {len(conversation_data)}")
             logger.info(f"Generating insights for: {user_question}")
 
-            # Fetch and aggregate data
-            aggregated_data = await self._fetch_and_aggregate_data(user_id, time_range)
+            # Build conversation summaries for analysis
+            conversation_summaries = ""
+            if conversation_data:
+                for i, conv in enumerate(conversation_data, 1):
+                    title = conv.get("title", f"Conversation {i}")
+                    transcript = conv.get("transcript", "")
+                    # Truncate for insight analysis
+                    if len(transcript) > 2000:
+                        transcript = transcript[:2000] + "... [truncated]"
+                    conversation_summaries += f"\n--- {title} ---\n{transcript}\n"
 
             # Build prompt
-            prompt = f"""Analyze this networking data and answer the question.
+            prompt = f"""Analyze this networking/event conversation data and answer the question.
 
-AGGREGATED DATA:
-{json.dumps(aggregated_data, indent=2)}
+CONVERSATION DATA:
+{conversation_summaries if conversation_summaries else "No conversation data available."}
 
 USER QUESTION: {user_question}
 
 Generate insights and recommendations as JSON."""
 
             # Execute with Claude
+            print(f"    [INSIGHT_AGENT] Calling Claude API (model: {self.model})...")
             response = await super().execute(
                 prompt=prompt,
                 max_tokens=1000,
                 temperature=0.4
             )
+            print(f"    [INSIGHT_AGENT] Claude response status: {response.get('status', 'unknown')}")
 
             # Parse JSON response
             result_text = response.get("response", "{}")
+            print(f"    [INSIGHT_AGENT] Raw response: {result_text[:200]}")
             insights = self._parse_json_response(result_text)
 
             # Validate
             insights = self._validate_insights(insights)
 
+            print(f"    [INSIGHT_AGENT] Generated {len(insights.get('insights', []))} insights")
             logger.info(f"Generated {len(insights.get('insights', []))} insights")
 
             return insights
 
         except Exception as e:
+            print(f"    [INSIGHT_AGENT] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Insight generation error: {e}")
             return {
                 "insights": ["Unable to generate insights at this time"],

@@ -79,6 +79,11 @@ JSON OUTPUT:"""
             Dict with prioritized recommendations
         """
         try:
+            print(f"\n    [RECOMMENDATION] Generating recommendations for: '{user_question}'")
+            print(f"    [RECOMMENDATION] user_id: {user_id}")
+            print(f"    [RECOMMENDATION] Has context from other agents: {context_from_other_agents is not None}")
+            if context_from_other_agents:
+                print(f"    [RECOMMENDATION] Context keys: {list(context_from_other_agents.keys())}")
             logger.info(f"Generating recommendations for: {user_question}")
 
             # Build prompt with context
@@ -94,24 +99,31 @@ USER QUESTION: {user_question}
 Provide 3-5 prioritized actionable recommendations as JSON."""
 
             # Execute with Claude
+            print(f"    [RECOMMENDATION] Calling Claude API (model: {self.model})...")
             response = await super().execute(
                 prompt=prompt,
                 max_tokens=1000,
                 temperature=0.5
             )
+            print(f"    [RECOMMENDATION] Claude response status: {response.get('status', 'unknown')}")
 
             # Parse JSON response
             result_text = response.get("response", "{}")
+            print(f"    [RECOMMENDATION] Raw response: {result_text[:200]}")
             recommendations = self._parse_json_response(result_text)
 
             # Validate
             recommendations = self._validate_recommendations(recommendations)
 
+            print(f"    [RECOMMENDATION] Generated {len(recommendations.get('recommendations', []))} recommendations")
             logger.info(f"Generated {len(recommendations.get('recommendations', []))} recommendations")
 
             return recommendations
 
         except Exception as e:
+            print(f"    [RECOMMENDATION] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             logger.error(f"Recommendation generation error: {e}")
             return {
                 "recommendations": [{

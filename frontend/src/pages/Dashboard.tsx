@@ -72,17 +72,31 @@ export function Dashboard() {
     setQuestion(questionText);
     setAnswer('');
 
+    console.log('[Dashboard] Asking question:', questionText);
+    console.log('[Dashboard] Selected event:', selectedEvent);
+
     try {
-      const response = await api.askQuestion({
+      const requestPayload = {
         question: questionText,
         conversation_id: selectedEvent !== 'all' ? selectedEvent : undefined,
         use_rag: true
-      });
+      };
+      console.log('[Dashboard] Request payload:', requestPayload);
+
+      const response = await api.askQuestion(requestPayload);
+
+      console.log('[Dashboard] Response received:', response);
+      console.log('[Dashboard] Final answer:', response.final_answer);
+      console.log('[Dashboard] Routed agents:', response.routed_agents);
+      console.log('[Dashboard] Execution time:', response.execution_time, 'seconds');
+      console.log('[Dashboard] Agent trace:', response.agent_trace);
 
       setAnswer(response.final_answer);
-    } catch (error) {
-      console.error('Error asking question:', error);
-      setAnswer('Sorry, I encountered an error processing your question. Please try again.');
+    } catch (error: any) {
+      console.error('[Dashboard] Error asking question:', error);
+      console.error('[Dashboard] Error response data:', error?.response?.data);
+      console.error('[Dashboard] Error status:', error?.response?.status);
+      setAnswer(`Sorry, I encountered an error processing your question. ${error?.response?.data?.detail || error?.message || 'Please try again.'}`);
     } finally {
       setAskingQuestion(false);
     }

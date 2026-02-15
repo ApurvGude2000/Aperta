@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import logging
 import re
 
@@ -20,12 +20,13 @@ router = APIRouter(prefix="/participants", tags=["Participant Extraction"])
 
 class ParticipantInfo(BaseModel):
     """Extracted participant information."""
-    name: Optional[str] = None
+    name: str
     company: Optional[str] = None
     title: Optional[str] = None
     email: Optional[str] = None
     linkedin_url: Optional[str] = None
     topics: List[str] = []
+    role: str  # "recruiter" or "candidate"
 
 
 class ExtractionResponse(BaseModel):
@@ -33,6 +34,7 @@ class ExtractionResponse(BaseModel):
     conversation_id: str
     participants_extracted: int
     participants: List[ParticipantInfo]
+    conversations_parsed: int
 
 
 @router.post("/extract/{conversation_id}", response_model=ExtractionResponse)
@@ -43,8 +45,8 @@ async def extract_participants_from_conversation(
     """
     Extract participants from a conversation transcript.
 
-    This analyzes the conversation text and creates participant records
-    for each person identified in the conversation.
+    Properly parses conversation structure to identify unique individuals,
+    not individual lines.
     """
     try:
         logger.info(f"Extracting participants from conversation {conversation_id}")
@@ -61,69 +63,79 @@ async def extract_participants_from_conversation(
         if not conversation.transcript:
             raise HTTPException(status_code=400, detail="Conversation has no transcript")
 
-        # Split transcript into individual conversations
-        # The transcript has multiple conversation snippets separated by blank lines
-        conversation_snippets = conversation.transcript.split('\n\n')
-        conversation_snippets = [s.strip() for s in conversation_snippets if s.strip()]
+        # Parse the transcript into conversation exchanges
+        # Each exchange is a dialogue between recruiter and candidate
+        exchanges = parse_conversation_exchanges(conversation.transcript)
 
-        logger.info(f"Found {len(conversation_snippets)} conversation snippets")
+        logger.info(f"Parsed {len(exchanges)} conversation exchanges")
 
-        participants_extracted = []
-        context_agent = ContextUnderstandingAgent()
+        # Extract participants from each exchange
+        participants_dict: Dict[str, ParticipantInfo] = {}  # Key: unique identifier
 
-        for idx, snippet in enumerate(conversation_snippets):
-            try:
-                # Parse the snippet to extract participant info
-                participant_info = await extract_participant_from_snippet(
-                    snippet,
-                    conversation_id,
-                    conversation.event_name or "Unknown Event",
-                    idx
+        for exchange in exchanges:
+            # Analyze the exchange to extract both people
+            candidate_info, recruiter_info = analyze_exchange(exchange)
+
+            if candidate_info:
+                # Create unique key based on role and identifiable info
+                key = f"candidate_{candidate_info.get('title', '')}_{candidate_info.get('company', '')}"
+                if key not in participants_dict:
+                    participants_dict[key] = candidate_info
+                else:
+                    # Merge topics
+                    existing = participants_dict[key]
+                    existing["topics"] = list(set(existing.get("topics", []) + candidate_info.get("topics", [])))
+
+            if recruiter_info:
+                key = f"recruiter_{recruiter_info.get('company', '')}_{recruiter_info.get('title', '')}"
+                if key not in participants_dict:
+                    participants_dict[key] = recruiter_info
+                else:
+                    # Merge topics
+                    existing = participants_dict[key]
+                    existing["topics"] = list(set(existing.get("topics", []) + recruiter_info.get("topics", [])))
+
+        # Create participant records in database
+        participants_list = []
+        for idx, (key, info) in enumerate(participants_dict.items(), 1):
+            participant = Participant(
+                conversation_id=conversation_id,
+                name=info.get("name", f"Person {idx}"),
+                company=info.get("company"),
+                title=info.get("title"),
+                email=info.get("email"),
+                linkedin_url=info.get("linkedin_url")
+            )
+            db.add(participant)
+
+            # Create entity records for topics
+            for topic in info.get("topics", []):
+                entity = Entity(
+                    conversation_id=conversation_id,
+                    entity_type="topic",
+                    entity_value=topic
                 )
+                db.add(entity)
 
-                if participant_info:
-                    # Create participant record
-                    participant = Participant(
-                        conversation_id=conversation_id,
-                        name=participant_info.get("name", f"Person {idx + 1}"),
-                        company=participant_info.get("company"),
-                        title=participant_info.get("title"),
-                        email=participant_info.get("email"),
-                        linkedin_url=participant_info.get("linkedin_url")
-                    )
-                    db.add(participant)
+            participants_list.append(ParticipantInfo(
+                name=participant.name,
+                company=participant.company,
+                title=participant.title,
+                email=participant.email,
+                linkedin_url=participant.linkedin_url,
+                topics=info.get("topics", []),
+                role=info.get("role", "unknown")
+            ))
 
-                    # Create entity records for topics
-                    for topic in participant_info.get("topics", []):
-                        entity = Entity(
-                            conversation_id=conversation_id,
-                            entity_type="topic",
-                            entity_value=topic
-                        )
-                        db.add(entity)
-
-                    participants_extracted.append(ParticipantInfo(
-                        name=participant.name,
-                        company=participant.company,
-                        title=participant.title,
-                        email=participant.email,
-                        linkedin_url=participant.linkedin_url,
-                        topics=participant_info.get("topics", [])
-                    ))
-
-            except Exception as e:
-                logger.warning(f"Failed to extract participant from snippet {idx}: {e}")
-                continue
-
-        # Commit all participants
         await db.commit()
 
-        logger.info(f"Extracted {len(participants_extracted)} participants")
+        logger.info(f"Successfully extracted {len(participants_list)} unique participants")
 
         return ExtractionResponse(
             conversation_id=conversation_id,
-            participants_extracted=len(participants_extracted),
-            participants=participants_extracted
+            participants_extracted=len(participants_list),
+            participants=participants_list,
+            conversations_parsed=len(exchanges)
         )
 
     except HTTPException:
@@ -133,86 +145,138 @@ async def extract_participants_from_conversation(
         raise HTTPException(status_code=500, detail=f"Error extracting participants: {str(e)}")
 
 
-async def extract_participant_from_snippet(
-    snippet: str,
-    conversation_id: str,
-    event_name: str,
-    snippet_idx: int
-) -> Optional[dict]:
+def parse_conversation_exchanges(transcript: str) -> List[str]:
     """
-    Extract participant information from a conversation snippet.
-
-    Uses pattern matching and keyword extraction to identify:
-    - Company names
-    - Job titles/roles
-    - Topics discussed
+    Parse transcript into individual conversation exchanges.
+    Each exchange is separated by double newlines.
     """
+    # Split by double newlines (conversation boundaries)
+    exchanges = transcript.split('\n\n')
+    exchanges = [e.strip() for e in exchanges if e.strip() and len(e.strip()) > 30]
+    return exchanges
 
-    if not snippet or len(snippet) < 20:
-        return None
 
-    participant_info = {
-        "name": None,
+def analyze_exchange(exchange: str) -> tuple:
+    """
+    Analyze a conversation exchange to extract candidate and recruiter information.
+
+    Returns: (candidate_info, recruiter_info)
+    """
+    lines = [line.strip().strip('"') for line in exchange.split('\n') if line.strip()]
+
+    candidate_info = {
+        "name": "Job Candidate",
+        "role": "candidate",
         "company": None,
         "title": None,
         "topics": []
     }
 
-    # Extract company mentions
+    recruiter_info = {
+        "name": "Company Recruiter",
+        "role": "recruiter",
+        "company": None,
+        "title": None,
+        "topics": []
+    }
+
+    # Analyze the full exchange text
+    exchange_lower = exchange.lower()
+
+    # Extract candidate information (lines 2, 4, 6... typically candidate)
+    candidate_lines = []
+    recruiter_lines = []
+
+    for i, line in enumerate(lines):
+        if i % 2 == 0:
+            recruiter_lines.append(line)
+        else:
+            candidate_lines.append(line)
+
+    candidate_text = ' '.join(candidate_lines)
+    recruiter_text = ' '.join(recruiter_lines)
+
+    # Extract candidate info
+    candidate_info = extract_person_info(candidate_text, "candidate")
+
+    # Extract recruiter info
+    recruiter_info = extract_person_info(recruiter_text, "recruiter")
+
+    # Extract topics from full exchange
+    topics = extract_topics(exchange_lower)
+    candidate_info["topics"] = topics
+    recruiter_info["topics"] = topics
+
+    return candidate_info, recruiter_info
+
+
+def extract_person_info(text: str, role: str) -> dict:
+    """Extract person information from text."""
+    info = {
+        "role": role,
+        "name": "Job Candidate" if role == "candidate" else "Company Recruiter",
+        "company": None,
+        "title": None,
+        "topics": []
+    }
+
+    # Extract company
     company_patterns = [
-        r"work(?:ing)? (?:at|for|with) ([A-Z][A-Za-z\s&]+?)(?:\.|,|'s|$)",
-        r"from ([A-Z][A-Za-z\s&]+?) (?:here|today)",
-        r"I'm (?:with|from) ([A-Z][A-Za-z\s&]+?)(?:\.|,|$)",
-        r"([A-Z][A-Za-z\s&]+?) team",
+        r"work(?:ing)? (?:at|for|with) ([A-Z][A-Za-z\s&]+?)(?:\.|,|'s|\?|$)",
+        r"I'm (?:with|from) ([A-Z][A-Za-z\s&]+?)(?:\.|,|\?|$)",
+        r"([A-Z][A-Za-z\s&]+?) (?:team|company|firm)",
     ]
 
     for pattern in company_patterns:
-        match = re.search(pattern, snippet)
+        match = re.search(pattern, text)
         if match:
-            participant_info["company"] = match.group(1).strip()
-            break
+            company = match.group(1).strip()
+            if len(company) < 40 and company not in ["HR", "Engineering", "Marketing"]:
+                info["company"] = company
+                if role == "recruiter":
+                    info["name"] = f"{company} Representative"
+                break
 
-    # Extract job titles/roles
+    # Extract job titles
     title_patterns = [
-        r"I'm (?:a|an|the) ([a-zA-Z\s]+?)(?:\.|,|for|at|with)",
-        r"([A-Z][a-z]+ (?:Engineer|Manager|Director|Analyst|Lead|Developer|Designer|Coordinator|Specialist))",
+        r"I'm (?:a|an|the) ([a-zA-Z\s]+?)(?:\.|,|for|at|with|\?)",
+        r"([A-Z][a-z]+ (?:Engineer|Manager|Director|Analyst|Lead|Developer|Designer|Coordinator|Specialist|Intern))",
         r"(?:graduating|looking for) ([a-zA-Z\s-]+?) (?:role|position)",
+        r"I'm (?:the )?([A-Z][a-z]+ [A-Z][a-z]+) for",
     ]
 
     for pattern in title_patterns:
-        match = re.search(pattern, snippet)
+        match = re.search(pattern, text)
         if match:
             title = match.group(1).strip()
-            if len(title) < 50:  # Sanity check
-                participant_info["title"] = title
+            if len(title) < 50 and title not in ["Hi", "Hello", "Great", "Perfect"]:
+                info["title"] = title
+                if role == "candidate" and not info.get("name"):
+                    info["name"] = f"Candidate ({title})"
                 break
 
-    # Extract topics discussed
+    return info
+
+
+def extract_topics(text: str) -> List[str]:
+    """Extract discussion topics from conversation text."""
     topic_keywords = {
-        "Software Engineering": ["software", "API", "codebase", "developer", "engineering", "technical"],
-        "Data Science": ["data science", "SQL", "predictive", "analytics"],
+        "Software Engineering": ["software", "API", "codebase", "developer", "engineering", "technical", "coding", "programming"],
+        "Data Science": ["data science", "SQL", "predictive", "analytics", "data"],
         "Marketing": ["marketing", "consumer behavior", "branding"],
-        "Finance": ["fintech", "investment", "accounting"],
-        "Project Management": ["project coordination", "management"],
+        "Finance": ["fintech", "investment", "accounting", "financial"],
+        "Project Management": ["project coordination", "management", "coordinator"],
         "Infrastructure": ["infrastructure", "construction"],
-        "HR": ["HR", "recruiting", "hiring"],
+        "HR & Recruiting": ["HR", "recruiting", "hiring", "talent"],
         "Sustainability": ["sustainability", "environmental", "carbon offset"],
-        "Design": ["UX", "design", "prototyping", "Figma"],
-        "Security": ["security clearance", "government"],
+        "Design & UX": ["UX", "design", "prototyping", "Figma", "user experience"],
+        "Security & Government": ["security clearance", "government", "national"],
+        "Operations": ["operations", "supply chain", "logistics", "vendor"],
     }
 
-    snippet_lower = snippet.lower()
+    topics = []
     for topic, keywords in topic_keywords.items():
-        if any(keyword in snippet_lower for keyword in keywords):
-            participant_info["topics"].append(topic)
+        if any(keyword in text for keyword in keywords):
+            topics.append(topic)
 
-    # If no name extracted, create a placeholder
-    if not participant_info["name"]:
-        if participant_info["company"]:
-            participant_info["name"] = f"{participant_info['company']} Representative"
-        elif participant_info["title"]:
-            participant_info["name"] = participant_info["title"]
-        else:
-            participant_info["name"] = f"Attendee {snippet_idx + 1}"
-
-    return participant_info
+    return topics[:3]  # Max 3 topics per exchange

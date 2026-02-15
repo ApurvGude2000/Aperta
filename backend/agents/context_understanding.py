@@ -1,424 +1,287 @@
 """
-AG4: Context Understanding Agent - Extracts and understands conversation context.
-Priority: 1 (CRITICAL) - Core intelligence for semantic understanding.
+Context Understanding Agent - Extracts structured entities, topics, and insights from conversations.
+Runs once per conversation after event ends, after upload to cloud.
 """
-from typing import Dict, Any, Optional, List
-from datetime import datetime
-from sqlalchemy import select
+from typing import Dict, Any, List, Optional
+import json
+import re
 from .base import ClaudeBaseAgent
-from tools.entity_extractor import EntityExtractor
-from tools.intent_recognizer import IntentRecognizer
 from utils.logger import setup_logger
-from db.session import AsyncSessionLocal
-from db.models import Entity as EntityModel, ActionItem, Conversation
 
 logger = setup_logger(__name__)
 
 
 class ContextUnderstandingAgent(ClaudeBaseAgent):
     """
-    Context Understanding Agent - AG4
+    Context Understanding Agent - Extracts structured information from conversations.
 
-    Responsibilities:
-    1. Entity extraction (people, companies, topics, technologies)
-    2. Entity resolution and disambiguation
-    3. Intent recognition
-    4. Action item extraction
-    5. Conversation context tracking
-    6. Clarification request generation
-
-    Priority: 1 (CRITICAL) - Provides core semantic understanding.
+    Purpose: Extract entities, topics, and insights from full conversations.
+    When Called: After event ends, once per conversation, after upload to cloud.
+    Output: Structured JSON with people, topics, action items, etc.
     """
 
     def __init__(self):
         """Initialize Context Understanding Agent."""
-        system_prompt = """You are the Context Understanding Agent, responsible for deep semantic analysis of conversations.
+        system_prompt = """You are a Context Understanding Agent analyzing networking conversations.
 
-Your primary responsibilities:
-1. Extract and structure information from conversations (entities, topics, commitments)
-2. Understand the user's networking goals and intentions
-3. Identify action items with responsible parties and deadlines
-4. Resolve ambiguities and disambiguate entity references
-5. Track conversation flow and context
-6. Generate clarifying questions when information is incomplete
+TASK: Extract structured information from this conversation.
 
-Entity types to extract:
-- People: Full names, titles, roles
-- Companies: Organization names
-- Topics: Discussion subjects and themes
-- Technologies: Tools, platforms, programming languages
-- Action Items: Commitments, promises, follow-ups
-- Dates: Deadlines and time references
+OUTPUT FORMAT (JSON ONLY):
+{
+  "people": [
+    {
+      "speaker_id": "Speaker 1",
+      "name": "First Last" or null,
+      "role": "Job title" or null,
+      "company": "Company name" or null,
+      "email": "email@example.com" or null,
+      "linkedin": "linkedin.com/in/username" or null
+    }
+  ],
+  "companies_mentioned": ["Company1", "Company2"],
+  "topics_discussed": ["Topic1", "Topic2", "Topic3"],
+  "technologies_mentioned": ["Python", "TensorFlow"],
+  "action_items": [
+    {
+      "assigned_to": "user" or "other_party",
+      "action": "Short action description (max 8 words)",
+      "deadline": "this week" or "next month" or null,
+      "priority": "high" or "medium" or "low"
+    }
+  ],
+  "key_interests": ["Interest area 1", "Interest area 2"],
+  "pain_points_mentioned": ["Pain point 1"],
+  "conversation_summary": "1-2 sentence summary of conversation",
+  "sentiment": "positive" or "neutral" or "negative",
+  "goal_alignment": {
+    "matches_user_goals": true or false,
+    "which_goals": ["Find investors"],
+    "alignment_score": 0.0 to 1.0
+  }
+}
 
-When analyzing conversations:
-1. Extract ALL relevant entities with confidence scores
-2. Identify relationships between entities
-3. Recognize the primary intent and secondary intents
-4. Find action items with WHO, WHAT, WHEN details
-5. Note any ambiguities that need clarification
-6. Provide structured JSON output
+RULES:
+1. Extract ALL people mentioned, not just speakers
+2. Topics should be specific (not generic like "business")
+3. Action items must be concrete and actionable
+4. Summary max 2 sentences
+5. Be concise: action items max 8 words each
+6. Output ONLY valid JSON, no markdown, no explanation
 
-Be thorough but accurate - only extract entities you're confident about."""
+USER GOALS: {user_goals}
+
+CONVERSATION:
+{full_transcript}
+
+JSON OUTPUT:"""
 
         super().__init__(
             name="context_understanding",
-            description="Extracts entities, intent, and action items from conversations",
+            description="Extracts structured entities and insights from conversations",
             system_prompt=system_prompt,
-            priority=1  # Critical priority
+            priority=3
         )
-
-        # Initialize analysis tools
-        self.entity_extractor = EntityExtractor()
-        self.intent_recognizer = IntentRecognizer()
-
-        # Statistics
-        self.total_entities_extracted = 0
-        self.total_action_items_found = 0
-        self.total_clarifications_requested = 0
 
         logger.info("Context Understanding Agent initialized")
 
     async def analyze_conversation(
         self,
-        text: str,
-        conversation_id: str,
-        context: Optional[Dict[str, Any]] = None
+        conversation_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Comprehensive conversation analysis.
+        Extract entities and insights from conversation.
 
         Args:
-            text: Conversation text to analyze
-            conversation_id: ID of the conversation
-            context: Optional additional context
+            conversation_data: Dictionary with:
+                - conversation_id: str
+                - full_transcript: str
+                - speaker_labels: List[str]
+                - duration_minutes: int
+                - user_goals: List[str]
+                - event_context: Dict (event_name, event_date, location)
 
         Returns:
-            Analysis results with entities, intent, and action items
+            Structured data with people, topics, action items, etc.
         """
-        logger.info(f"Analyzing conversation {conversation_id} ({len(text)} chars)")
-
-        # Step 1: Extract entities using pattern-based extraction
-        entities = self.entity_extractor.extract_all(text, context)
-        self.total_entities_extracted += len(entities)
-
-        # Step 2: Recognize intent
-        intents = self.intent_recognizer.recognize(text, context)
-
-        # Step 3: Use Claude for deeper semantic analysis
-        claude_analysis = await self._analyze_with_claude(
-            text, entities, intents, context
-        )
-
-        # Step 4: Merge and resolve entities
-        all_entities = self._merge_entities(entities, claude_analysis.get('entities', []))
-        resolved_entities = self.entity_extractor.resolve_entities(all_entities)
-
-        # Step 5: Extract action items
-        action_items = await self._extract_action_items(
-            text, claude_analysis, conversation_id
-        )
-        self.total_action_items_found += len(action_items)
-
-        # Step 6: Generate clarifications if needed
-        clarifications = self._generate_clarifications(
-            all_entities, action_items, claude_analysis
-        )
-        if clarifications:
-            self.total_clarifications_requested += len(clarifications)
-
-        # Step 7: Store in database
-        await self._store_entities(conversation_id, all_entities)
-        await self._store_action_items(conversation_id, action_items)
-
-        result = {
-            'conversation_id': conversation_id,
-            'entities': {
-                'total': len(all_entities),
-                'by_type': self.entity_extractor.get_statistics(all_entities)['by_type'],
-                'resolved': {k: len(v) for k, v in resolved_entities.items()},
-                'details': self.entity_extractor.to_json(all_entities)
-            },
-            'intent': {
-                'primary': intents[0].intent_type.value if intents else 'unknown',
-                'confidence': intents[0].confidence if intents else 0.0,
-                'all_intents': self.intent_recognizer.to_json(intents)
-            },
-            'action_items': action_items,
-            'clarifications': clarifications,
-            'context_summary': claude_analysis.get('summary', ''),
-            'key_topics': claude_analysis.get('topics', []),
-            'timestamp': datetime.utcnow().isoformat()
-        }
-
-        logger.info(
-            f"Analysis complete: {len(all_entities)} entities, "
-            f"{len(action_items)} action items"
-        )
-
-        return result
-
-    async def extract_entities_only(
-        self,
-        text: str,
-        entity_types: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """
-        Extract only entities without full analysis.
-
-        Args:
-            text: Text to analyze
-            entity_types: Specific entity types to extract (None = all)
-
-        Returns:
-            Extracted entities
-        """
-        entities = self.entity_extractor.extract_all(text)
-
-        # Filter by type if specified
-        if entity_types:
-            entities = [e for e in entities if e.entity_type in entity_types]
-
-        return {
-            'entities': self.entity_extractor.to_json(entities),
-            'statistics': self.entity_extractor.get_statistics(entities)
-        }
-
-    async def recognize_intent_only(
-        self,
-        text: str
-    ) -> Dict[str, Any]:
-        """
-        Recognize intent without full analysis.
-
-        Args:
-            text: Text to analyze
-
-        Returns:
-            Recognized intents
-        """
-        return self.intent_recognizer.get_intent_summary(text)
-
-    async def _analyze_with_claude(
-        self,
-        text: str,
-        entities: List,
-        intents: List,
-        context: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """Use Claude for semantic analysis and validation."""
-
-        # Build analysis prompt
-        prompt = f"""Analyze this conversation for context and meaning.
-
-Conversation text (first 2000 chars):
-{text[:2000]}
-
-Already detected:
-- {len(entities)} entities
-- Primary intent: {intents[0].intent_type.value if intents else 'unknown'}
-
-Please provide:
-1. Key topics discussed (3-5 main topics)
-2. Any additional entities missed by pattern matching
-3. A brief summary (2-3 sentences) of the conversation
-4. Relationships between people/companies mentioned
-5. Any ambiguities that need clarification
-
-Respond in JSON format:
-{{
-    "topics": ["topic1", "topic2", "topic3"],
-    "entities": [
-        {{"type": "person", "value": "Name", "confidence": 0.9}},
-        {{"type": "company", "value": "Company", "confidence": 0.85}}
-    ],
-    "summary": "Brief summary of the conversation",
-    "relationships": [
-        {{"person": "Name", "company": "Company", "role": "Engineer"}}
-    ],
-    "ambiguities": ["What exactly is...", "When should..."]
-}}"""
-
         try:
+            logger.info(f"Context Understanding analyzing conversation {conversation_data.get('conversation_id')}")
+
+            # Build prompt with conversation data
+            user_goals = conversation_data.get('user_goals', ['Network and build connections'])
+            full_transcript = conversation_data.get('full_transcript', '')
+
+            prompt = f"""Analyze this networking conversation.
+
+CONVERSATION ID: {conversation_data.get('conversation_id', 'unknown')}
+DURATION: {conversation_data.get('duration_minutes', 0)} minutes
+SPEAKERS: {', '.join(conversation_data.get('speaker_labels', []))}
+EVENT: {conversation_data.get('event_context', {}).get('event_name', 'Unknown Event')}
+
+USER GOALS:
+{', '.join(user_goals)}
+
+FULL TRANSCRIPT:
+{full_transcript}
+
+Extract structured information and return as JSON."""
+
             # Execute with Claude
-            result = await self.execute(
+            response = await self.execute(
                 prompt=prompt,
-                context=context,
                 max_tokens=2000,
-                temperature=0.3  # Lower temperature for factual extraction
+                temperature=0.3  # Low temperature for consistent extraction
             )
 
             # Parse JSON response
-            import json
-            try:
-                analysis = json.loads(result['response'])
-            except:
-                # If JSON parsing fails, extract key info
-                analysis = {
-                    'topics': [],
-                    'entities': [],
-                    'summary': result['response'][:200],
-                    'relationships': [],
-                    'ambiguities': []
-                }
+            result_text = response.get("response", "{}")
+            result = self._parse_json_response(result_text)
 
-            return analysis
+            # Validate and add defaults
+            result = self._validate_and_fill_defaults(result, conversation_data)
+
+            logger.info(f"Context Understanding complete: {len(result.get('people', []))} people, "
+                       f"{len(result.get('topics_discussed', []))} topics")
+
+            return result
 
         except Exception as e:
-            logger.error(f"Error in Claude context analysis: {e}")
-            return {
-                'topics': [],
-                'entities': [],
-                'summary': '',
-                'relationships': [],
-                'ambiguities': []
+            logger.error(f"Context Understanding error: {e}")
+            return self._get_minimal_response(conversation_data, str(e))
+
+    def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
+        """
+        Parse JSON from Claude response.
+
+        Args:
+            response_text: Response text from Claude
+
+        Returns:
+            Parsed JSON dict
+        """
+        # Clean response
+        response_text = response_text.strip()
+
+        # Remove markdown code blocks
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip().startswith("```"):
+                lines = lines[:-1]
+            response_text = "\n".join(lines).strip()
+
+        # Try to parse JSON
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error: {e}")
+            # Try to extract JSON from text
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                try:
+                    return json.loads(json_match.group())
+                except:
+                    pass
+            raise
+
+    def _validate_and_fill_defaults(
+        self,
+        result: Dict[str, Any],
+        conversation_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Validate result and fill in defaults for missing fields.
+
+        Args:
+            result: Parsed result dict
+            conversation_data: Original conversation data
+
+        Returns:
+            Validated result with defaults
+        """
+        # Required fields with defaults
+        defaults = {
+            "people": [],
+            "companies_mentioned": [],
+            "topics_discussed": [],
+            "technologies_mentioned": [],
+            "action_items": [],
+            "key_interests": [],
+            "pain_points_mentioned": [],
+            "conversation_summary": "Conversation analyzed",
+            "sentiment": "neutral",
+            "goal_alignment": {
+                "matches_user_goals": False,
+                "which_goals": [],
+                "alignment_score": 0.0
             }
+        }
 
-    def _merge_entities(
+        # Fill in missing fields
+        for key, default_value in defaults.items():
+            if key not in result:
+                result[key] = default_value
+
+        # Validate people structure
+        for person in result.get("people", []):
+            if "speaker_id" not in person:
+                person["speaker_id"] = "Unknown"
+            for field in ["name", "role", "company", "email", "linkedin"]:
+                if field not in person:
+                    person[field] = None
+
+        # Validate action items structure
+        for item in result.get("action_items", []):
+            if "assigned_to" not in item:
+                item["assigned_to"] = "user"
+            if "action" not in item:
+                item["action"] = "Follow up"
+            if "deadline" not in item:
+                item["deadline"] = None
+            if "priority" not in item:
+                item["priority"] = "medium"
+
+        # Ensure goal_alignment has all fields
+        if "goal_alignment" in result:
+            ga = result["goal_alignment"]
+            if "matches_user_goals" not in ga:
+                ga["matches_user_goals"] = False
+            if "which_goals" not in ga:
+                ga["which_goals"] = []
+            if "alignment_score" not in ga:
+                ga["alignment_score"] = 0.0
+
+        return result
+
+    def _get_minimal_response(
         self,
-        pattern_entities: List,
-        claude_entities: List[Dict[str, Any]]
-    ) -> List:
-        """Merge entities from pattern matching and Claude analysis."""
-        # Start with pattern entities
-        merged = list(pattern_entities)
+        conversation_data: Dict[str, Any],
+        error_message: str
+    ) -> Dict[str, Any]:
+        """
+        Return minimal valid response on error.
 
-        # Add Claude entities that aren't duplicates
-        for claude_entity in claude_entities:
-            # Check if already exists
-            is_duplicate = False
-            for existing in merged:
-                if (existing.entity_type == claude_entity.get('type') and
-                    existing.entity_value.lower() == claude_entity.get('value', '').lower()):
-                    is_duplicate = True
-                    break
+        Args:
+            conversation_data: Original conversation data
+            error_message: Error message
 
-            if not is_duplicate:
-                # Convert Claude entity to Entity object
-                from tools.entity_extractor import Entity
-                merged.append(Entity(
-                    entity_type=claude_entity.get('type', 'unknown'),
-                    entity_value=claude_entity.get('value', ''),
-                    confidence=claude_entity.get('confidence', 0.7),
-                    context='Extracted by Claude AI',
-                    metadata={'source': 'claude'},
-                    start_pos=0,
-                    end_pos=0
-                ))
-
-        return merged
-
-    async def _extract_action_items(
-        self,
-        text: str,
-        claude_analysis: Dict[str, Any],
-        conversation_id: str
-    ) -> List[Dict[str, Any]]:
-        """Extract action items with details."""
-        action_items = []
-
-        # Get action items from entity extractor
-        entities = self.entity_extractor.extract_all(text)
-        action_entities = [e for e in entities if e.entity_type == 'action_item']
-
-        # Also check for action items in Claude analysis
-        claude_actions = claude_analysis.get('action_items', [])
-
-        # Process action items
-        for action in action_entities:
-            action_items.append({
-                'description': action.entity_value,
-                'responsible_party': None,  # TODO: Extract from context
-                'due_date': None,  # TODO: Extract from surrounding text
-                'confidence': action.confidence,
-                'source': 'pattern_extraction'
-            })
-
-        return action_items
-
-    async def _store_entities(
-        self,
-        conversation_id: str,
-        entities: List
-    ) -> None:
-        """Store extracted entities in database."""
-        try:
-            async with AsyncSessionLocal() as session:
-                for entity in entities:
-                    db_entity = EntityModel(
-                        conversation_id=conversation_id,
-                        entity_type=entity.entity_type,
-                        entity_value=entity.entity_value,
-                        confidence=entity.confidence,
-                        context=entity.context,
-                        extra_data=entity.metadata
-                    )
-                    session.add(db_entity)
-
-                await session.commit()
-                logger.debug(f"Stored {len(entities)} entities for conversation {conversation_id}")
-
-        except Exception as e:
-            logger.error(f"Failed to store entities: {e}")
-
-    async def _store_action_items(
-        self,
-        conversation_id: str,
-        action_items: List[Dict[str, Any]]
-    ) -> None:
-        """Store action items in database."""
-        try:
-            async with AsyncSessionLocal() as session:
-                for item in action_items:
-                    db_action = ActionItem(
-                        conversation_id=conversation_id,
-                        description=item['description'],
-                        responsible_party=item.get('responsible_party'),
-                        due_date=item.get('due_date'),
-                        completed=False
-                    )
-                    session.add(db_action)
-
-                await session.commit()
-                logger.debug(f"Stored {len(action_items)} action items")
-
-        except Exception as e:
-            logger.error(f"Failed to store action items: {e}")
-
-    def _generate_clarifications(
-        self,
-        entities: List,
-        action_items: List[Dict[str, Any]],
-        claude_analysis: Dict[str, Any]
-    ) -> List[str]:
-        """Generate clarification questions for ambiguous information."""
-        clarifications = []
-
-        # Check for action items without deadlines
-        incomplete_actions = [a for a in action_items if not a.get('due_date')]
-        if incomplete_actions:
-            clarifications.append(
-                f"When should these {len(incomplete_actions)} action item(s) be completed?"
-            )
-
-        # Check for people without company affiliation
-        people = [e for e in entities if e.entity_type == 'person']
-        companies = [e for e in entities if e.entity_type == 'company']
-        if people and not companies:
-            clarifications.append(
-                "Which companies or organizations are these people affiliated with?"
-            )
-
-        # Add Claude's ambiguities
-        clarifications.extend(claude_analysis.get('ambiguities', []))
-
-        return clarifications[:5]  # Limit to 5 clarifications
-
-    def get_stats(self) -> Dict[str, Any]:
-        """Get Context Understanding agent statistics."""
-        base_stats = super().get_stats()
-        base_stats.update({
-            'total_entities_extracted': self.total_entities_extracted,
-            'total_action_items_found': self.total_action_items_found,
-            'total_clarifications_requested': self.total_clarifications_requested
-        })
-        return base_stats
+        Returns:
+            Minimal valid response structure
+        """
+        return {
+            "people": [],
+            "companies_mentioned": [],
+            "topics_discussed": [],
+            "technologies_mentioned": [],
+            "action_items": [],
+            "key_interests": [],
+            "pain_points_mentioned": [],
+            "conversation_summary": f"Failed to parse conversation: {error_message}",
+            "sentiment": "neutral",
+            "goal_alignment": {
+                "matches_user_goals": False,
+                "which_goals": [],
+                "alignment_score": 0.0
+            },
+            "error": error_message
+        }

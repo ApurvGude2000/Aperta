@@ -11,13 +11,14 @@ from utils.logger import setup_logger
 import utils.console_logger as console_logger
 
 # Import agents
-from agents.intelligent_router import IntelligentRouter
-from agents.orchestrator import AgentOrchestrator
-from agents.perception import PerceptionAgent
-from agents.context_understanding import ContextUnderstandingAgent
-from agents.privacy_guardian import PrivacyGuardianAgent
-from agents.strategic_networking import StrategicNetworkingAgent
-from agents.follow_up import FollowUpAgent
+from agents import (
+    qa_orchestrator,
+    orchestrator,
+    ContextUnderstandingAgent,
+    PrivacyGuardianAgent,
+    FollowUpAgent,
+    CrossPollinationAgent
+)
 
 # Import services
 from services.rag_context import RAGContextManager
@@ -50,34 +51,28 @@ async def lifespan(app: FastAPI):
     console_logger.log_info("RAG context manager initialized", "Startup")
     
     # Initialize agents
-    perception_agent = PerceptionAgent()
     context_agent = ContextUnderstandingAgent()
     privacy_agent = PrivacyGuardianAgent()
-    strategic_agent = StrategicNetworkingAgent()
     followup_agent = FollowUpAgent()
-    
-    logger.info("All agents initialized")
-    console_logger.log_info("All 5 agents initialized", "Startup")
-    
-    # Initialize orchestrator
-    orchestrator = AgentOrchestrator()
+    crosspoll_agent = CrossPollinationAgent()
 
-    # Register agents
-    orchestrator.register_agent(perception_agent)
+    logger.info("All agents initialized")
+    console_logger.log_info("All 4 core agents initialized", "Startup")
+
+    # Register agents with orchestrator
     orchestrator.register_agent(context_agent)
     orchestrator.register_agent(privacy_agent)
-    orchestrator.register_agent(strategic_agent)
     orchestrator.register_agent(followup_agent)
-    logger.info("Orchestrator initialized")
-    console_logger.log_info("Orchestrator initialized", "Startup")
-    
-    # Initialize intelligent router
-    router = IntelligentRouter()
-    logger.info("Intelligent router initialized")
-    console_logger.log_info("Intelligent router initialized", "Startup")
-    
+    orchestrator.register_agent(crosspoll_agent)
+    logger.info("Orchestrator initialized with agents")
+    console_logger.log_info("Orchestrator initialized with agents", "Startup")
+
+    # Q&A Orchestrator is already initialized globally
+    logger.info("Q&A orchestrator ready")
+    console_logger.log_info("Q&A orchestrator ready (9 agents)", "Startup")
+
     # Set components in route modules
-    qa.set_qa_components(router, orchestrator, rag_manager)
+    qa.set_qa_components(qa_orchestrator, orchestrator, rag_manager)
     conversations.set_conversation_orchestrator(orchestrator)
     logger.info("Route components configured")
     console_logger.log_info("Route components configured", "Startup")

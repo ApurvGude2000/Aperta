@@ -23,6 +23,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+python main.py
+
 ```
 
 ## Step 2: Frontend Setup (2 minutes)

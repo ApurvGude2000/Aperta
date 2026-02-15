@@ -16,8 +16,8 @@ anthropic==0.40.0
 sqlalchemy==2.0.36
 aiosqlite==0.20.0
 alembic==1.13.1
-asyncpg==0.29.0  # PostgreSQL async driver
-psycopg2-binary==2.9.9  # PostgreSQL driver
+asyncpg==0.30.0  # PostgreSQL async driver (Python 3.13 compatible)
+psycopg2-binary==2.9.10  # PostgreSQL driver
 cloud-sql-python-connector[asyncpg]==1.11.0  # Cloud SQL connector
 
 # Google Cloud Storage
@@ -36,7 +36,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-dateutil==2.8.2
 psutil==5.9.8
-pandas==2.1.4  # For data migration
+pandas==2.2.3  # For data migration (Python 3.13 compatible)
 
 # Testing (development)
 pytest==8.0.0

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # OpenAI API Configuration (optional)
     openai_api_key: Optional[str] = None
 
+    # Perplexity API Configuration (for Cross-Pollination Agent)
+    perplexity_api_key: Optional[str] = None
+
     # Fetch.ai Configuration
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None

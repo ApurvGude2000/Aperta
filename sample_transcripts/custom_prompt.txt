@@ -1,0 +1,149 @@
+"Hi there! Please scan this QR code first so we can get you into our system for the networking event later this week."
+
+"No problem, just did it. I’ve been following your firm’s work in infrastructure for a while. I’m a graduating senior looking for entry-level roles in project coordination."
+
+"Great. Do you have a physical copy of your resume handy? I’d like to jot a few notes on it."
+
+"Right here. I’ve spent the last summer as a junior analyst, so I’m really looking to hit the ground running."
+
+"Perfect. We’re actually doing a batch of first-round screens tomorrow. I’ll make a note that we spoke. Have a good one!"
+
+"Hey! How are you holding up? It’s pretty loud in here today, isn't it?"
+
+"It’s definitely energetic! I’m doing well, though. I was really excited to see your company on the list today. I’ve been using your software for my capstone project."
+
+"Oh, really? That’s awesome to hear. I’m actually on the development team, not HR. What do you think of the new API documentation?"
+
+"It’s much cleaner than the previous version, though I did have a few questions about the authentication headers. Is that something the intern team gets to work on?"
+
+"Actually, yes. We let our interns dive right into the codebase. Tell you what—skip the general portal and email me your GitHub link directly. Here’s my card."
+
+"Hello. Are you in the Engineering or Construction management track?"
+
+"I’m actually a Data Science major, but I noticed your company is heavily investing in predictive maintenance for your fleet."
+
+"Ah, I see. To be honest, we’re primarily here for the field engineers today. I don't have a lot of info on the tech side of things."
+
+"I understand. Is there a specific office or a lead for the R&D department I could reach out to online?"
+
+"Your best bet is our headquarters in Chicago. If you apply through the 'Specialist' portal, it goes to that team. Sorry I couldn't be more help!"
+
+"Hi... sorry, let me just finish this note. Okay, how can I help you?"
+
+"No worries at all, I can imagine it’s been a long morning! I’m interested in the Marketing Analyst position. I’ve focused my studies on consumer behavior and SQL."
+
+"Right, okay. We are looking for people who can start in June. Are you open to relocating to the East Coast?"
+
+"I am definitely open to relocation. I’ve actually lived in three different states, so I’m used to the move."
+
+"Good to know. Leave your resume here. We’ll be reaching out to candidates by next Friday if there's a match."
+
+"Come on over! We’re building a new team for our fintech startup. Do you like fast-paced environments, or do you prefer a more structured corporate vibe?"
+
+"I definitely thrive in the fast-paced stuff. I’ve worked on three different volunteer projects this year where I had to teach myself the tools as I went."
+
+"That’s what we like to hear. We don't have 'job descriptions' as much as we have 'problems that need solving.' What’s a problem you’ve solved recently?"
+
+"I actually had to automate a reporting process for a local non-profit that was taking them ten hours a week. I got it down to ten minutes with a custom script."
+
+"Love that. Here’s my phone number—text me your LinkedIn profile and let's grab coffee later this week."
+
+"Good afternoon. Please place your resume in the 'Intern' bin. What is your current GPA?"
+
+"I’m at a 3.8. I’ve balanced that while working a part-time job and leading the student investment club."
+
+"Impressive. We have a very strict training program that begins in July. Are you available for a full 10-week stint in New York?"
+
+"Yes, I’ve already cleared my summer schedule for a full-time internship. Is the program rotation-based or fixed to one desk?"
+
+"It’s a rotation for the first four weeks, then you’re placed based on performance. Thank you for stopping by."
+
+"Hi! Just a heads up, we don't take paper resumes. You’ll need to apply on our website to be considered."
+
+"I completely understand. I actually already submitted my application last night! I’m here because I wanted to ask about the team culture."
+
+"Oh, you’re ahead of the game! In that case, let’s chat. What specifically do you want to know about working with us?"
+
+"I saw that your company has a big emphasis on mentorship. How does that actually look for someone in their first six months?"
+
+"It’s pretty robust. You’re assigned a 'buddy' who isn't your boss, so you can ask the 'silly' questions without any pressure. It really helped me when I started."
+
+"Hello. We are looking for candidates who are U.S. citizens for our security clearances. Does that apply to you?"
+
+"Yes, it does. I’ve been interested in public service for a while and would love to apply my technical skills to government projects."
+
+"Great. The process can take about six to nine months because of the background checks. Are you looking for something immediately or after graduation?"
+
+"I graduate in May, so the timeline actually works out well for me. What does the typical day look like for a junior analyst in your department?"
+
+"It’s a lot of data verification and reporting, but you’re working on projects that actually impact national policy. Here is a brochure with the specific steps for the clearance."
+
+"Hi! Do you have a portfolio or a website I can look at? We’re a creative agency, so we like to see the work."
+
+"I do! I have a QR code right here on my resume that links to my design portfolio. I specialize in UX for mobile apps."
+
+"Awesome. Let me take a look... Oh, I like the clean layout on this travel app project. Did you do the prototyping yourself?"
+
+"I did. I used Figma for the wireframes and conducted user testing with about fifteen people to refine the navigation."
+
+"That’s exactly the kind of process we look for. I’m going to pass your link to our Creative Director tonight."
+
+"We’re looking for people who are passionate about sustainability. Does that align with your career goals?"
+
+"Absolutely. I’ve taken several electives in environmental economics because I want to work for a company that prioritizes the triple bottom line."
+
+"That’s great to hear. Most students just ask about the salary. We’re looking for research interns for our carbon offset program."
+
+"I actually read your company’s recent impact report. The way you’re measuring soil health is fascinating. Is that a collaborative project?"
+
+"It is! We work with several universities. You’re very well-prepared. Let’s make sure we have your contact info before you leave."
+
+"I’m the Engineering Lead for our cloud team. Quick question: how would you explain a 'container' to someone who isn't technical?"
+
+"I’d say it’s like a shipping container for software. It holds everything the program needs to run, so you can move it from a ship to a train to a truck without worrying about what’s inside changing."
+
+"Not bad. We get a lot of people who know the buzzwords but can't explain the logic. Are you comfortable with Linux environments?"
+
+"Yes, I’ve been using a Linux distro as my primary OS for about two years now. I'm very comfortable with the command line."
+
+"Good. We need more people who aren't afraid of the terminal. Here’s my direct email—send me your resume and mention we talked about the shipping container analogy."
+
+"Hi! I’ve got a panel I have to speak at in five minutes, so give me your best 30-second pitch."
+
+"I’m a problem-solver who just finished a project managing a 10-person team for a campus-wide event. I reduced our overhead costs by 20% while increasing student engagement."
+
+"I like the numbers. What’s the one thing you want to do in your first year of a job?"
+
+"I want to master your internal workflow so I can start identifying bottlenecks and suggesting efficiency improvements."
+
+"Fair enough. Give my colleague here your resume and tell him I said to put a star on it. I’ve gotta run!"
+
+"I’m from the HR department, so I handle everything from accounting to operations. Which area were you looking into?"
+
+"I’m interested in the Supply Chain Coordinator role. I’ve had a previous internship where I assisted with vendor management and logistics."
+
+"Oh, perfect. We’re actually expanding that department right now. Are you familiar with any ERP software?"
+
+"I’ve used SAP in my last role for inventory tracking, and I’m a quick learner when it comes to new platforms."
+
+"That’s a huge plus. I’ll make sure the hiring manager for logistics sees your resume specifically."
+
+"We can teach the technical stuff, but we can't teach 'culture fit.' Tell me about a time you had to deal with a difficult teammate."
+
+"In my last group project, we had someone who wasn't meeting deadlines. Instead of going to the professor, I sat down with them to see if they were struggling with the material."
+
+"And what happened?"
+
+"Turns out they were. I spent a few hours tutoring them on the basics, and we ended up finishing the project on time with an A. It taught me that communication usually solves most conflicts."
+
+"I love that answer. We’re a very collaborative office, so that’s exactly what we want to hear."
+
+"It’s been a pleasure meeting you today. You’ve got a great background. What are your next steps for the job hunt?"
+
+"I’m looking to have a position secured by the end of the semester. I’m very interested in your firm, so I’ll be following up with an email tomorrow morning."
+
+"Sounds like a plan. Is there anything else you need from me before you head to the next booth?"
+
+"Just a business card if you have one, or the best way to stay in touch. I really enjoyed learning about your new initiative."
+
+"Here you go. Looking forward to seeing your email. Good luck with the rest of the fair!"

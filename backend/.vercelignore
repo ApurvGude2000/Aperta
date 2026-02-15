@@ -1,0 +1,40 @@
+# Elasticsearch (local only)
+elasticsearch-*/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+aperta.db
+
+# Environment
+.env
+.env.*
+
+# Deployment scripts
+run_elasticsearch.sh
+docker-compose*.yml
+Dockerfile*
+deploy/
+
+# Documentation
+*.md
+!README.md
+
+# Service account
+*-service-account.json
+
+# IDE
+.vscode/
+.idea/
+*.swp

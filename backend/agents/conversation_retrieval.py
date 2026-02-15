@@ -1,8 +1,9 @@
 """
-Conversation Retrieval Agent - Searches conversations and returns relevant excerpts.
-Uses vector similarity search with embeddings.
+Conversation Retrieval Agent - Searches conversations using vector similarity.
+Updated to use Elasticsearch with JINA embeddings for real semantic search.
 """
 from typing import Dict, Any, List, Optional
+from services.elasticsearch_service import es_service
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -10,17 +11,17 @@ logger = setup_logger(__name__)
 
 class ConversationRetrievalAgent:
     """
-    Conversation Retrieval Agent - Search conversations using vector similarity.
+    Conversation Retrieval Agent - Search conversations using semantic similarity.
 
     Purpose: Search conversations and return relevant excerpts.
     When Called: As determined by Query Router, for Q&A system.
-    Implementation: Vector search with embeddings (Elasticsearch/Chroma with JINA embeddings).
+    Implementation: Elasticsearch with JINA embeddings for vector search.
     """
 
     def __init__(self):
         """Initialize Conversation Retrieval Agent."""
         self.name = "conversation_retrieval"
-        self.description = "Searches conversations using vector similarity"
+        self.description = "Searches conversations using semantic vector similarity"
         logger.info("Conversation Retrieval Agent initialized")
 
     async def execute(
@@ -28,6 +29,7 @@ class ConversationRetrievalAgent:
         user_question: str,
         user_id: str,
         max_results: int = 5,
+        filters: Optional[Dict[str, Any]] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -37,6 +39,7 @@ class ConversationRetrievalAgent:
             user_question: User's search query
             user_id: User identifier for filtering
             max_results: Maximum number of results to return
+            filters: Optional filters (topics, people, sentiment, etc.)
 
         Returns:
             Dict with search results
@@ -44,47 +47,27 @@ class ConversationRetrievalAgent:
         try:
             logger.info(f"Searching conversations for: {user_question}")
 
-            # TODO: Implement vector search
-            # 1. Embed user question using JINA embeddings
-            # 2. Search vector database (Elasticsearch/Chroma)
-            # 3. Rank by relevance
-            # 4. Return top results
-
-            # Placeholder implementation
-            results = self._placeholder_search(user_question, user_id, max_results)
+            # Use Elasticsearch service for semantic search
+            results = await es_service.search_conversations(
+                query=user_question,
+                user_id=user_id,
+                max_results=max_results,
+                filters=filters
+            )
 
             logger.info(f"Found {len(results)} conversation excerpts")
 
-            return {"results": results}
+            return {
+                "results": results,
+                "total_found": len(results),
+                "query": user_question
+            }
 
         except Exception as e:
             logger.error(f"Conversation retrieval error: {e}")
-            return {"results": [], "error": str(e)}
-
-    def _placeholder_search(
-        self,
-        query: str,
-        user_id: str,
-        max_results: int
-    ) -> List[Dict[str, Any]]:
-        """
-        Placeholder search implementation.
-        TODO: Replace with actual vector search.
-        """
-        # Return placeholder results
-        return [
-            {
-                "person_name": "Alice Chen",
-                "excerpt": "I think AI safety is critical for healthcare applications. We need better alignment between model objectives and patient outcomes...",
-                "relevance_score": 0.92,
-                "conversation_date": "2026-03-15",
-                "topics": ["AI safety", "Healthcare AI"]
-            },
-            {
-                "person_name": "Bob Smith",
-                "excerpt": "AI safety concerns are top of mind for us at MediAI. We're implementing...",
-                "relevance_score": 0.87,
-                "conversation_date": "2026-03-15",
-                "topics": ["AI safety", "Medical imaging"]
+            return {
+                "results": [],
+                "total_found": 0,
+                "query": user_question,
+                "error": str(e)
             }
-        ][:max_results]

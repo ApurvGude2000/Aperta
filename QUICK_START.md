@@ -35,6 +35,8 @@ cd /Users/apurvgude/Desktop/Data\ Science\ /NetworkAI/Aperta/frontend
 
 # Install dependencies
 npm install
+
+nmp run dev
 ```
 
 ## Step 3: Start Both Servers (1 minute)

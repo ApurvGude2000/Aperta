@@ -12,7 +12,7 @@ export function ConversationDetail() {
   const navigate = useNavigate();
 
   const [conversation, setConversation] = useState<ConversationResponse | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [_analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);

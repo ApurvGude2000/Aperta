@@ -12,6 +12,7 @@ from datetime import datetime
 from db.session import get_db_session
 from db.models import Conversation, Participant, Entity, ActionItem
 from agents.orchestrator import AgentOrchestrator
+from services.transcript_storage import transcript_storage
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -117,93 +118,97 @@ def set_conversation_orchestrator(orchestrator: AgentOrchestrator):
 
 @router.post("", response_model=ConversationResponse, status_code=201)
 async def create_conversation(
-    request: ConversationCreate,
-    db: AsyncSession = Depends(get_db_session)
+    request: ConversationCreate
 ) -> ConversationResponse:
     """
-    Create a new conversation.
-    
+    Create a new conversation by uploading transcript to GCS.
+
     Args:
         request: Conversation creation request
-        db: Database session
-        
+
     Returns:
         Created conversation
     """
     try:
-        conversation = Conversation(
-            user_id="default_user",  # TODO: Get from auth context
-            title=request.title,
+        # Generate ID
+        import uuid
+        conversation_id = str(uuid.uuid4())
+
+        # Create file name from title or generate one
+        file_name = request.title.replace(' ', '_') if request.title else f"transcript_{conversation_id[:8]}"
+        file_name = f"{file_name}.txt"
+
+        # Upload transcript to GCS
+        success = transcript_storage.upload_transcript(file_name, request.transcript)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to upload transcript to GCS")
+
+        # Return conversation response
+        return ConversationResponse(
+            id=conversation_id,
+            user_id="default_user",
+            title=request.title or file_name,
             transcript=request.transcript,
             status=request.status,
             recording_url=request.recording_url,
             location=request.location,
             event_name=request.event_name,
             started_at=request.started_at or datetime.utcnow(),
-            ended_at=request.ended_at
+            ended_at=request.ended_at,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            participants=[],
+            entities=[],
+            action_items=[]
         )
-        
-        db.add(conversation)
-        await db.commit()
-        await db.refresh(conversation)
-        
-        return _conversation_to_response(conversation)
-        
+
     except Exception as e:
-        await db.rollback()
         logger.error(f"Error creating conversation: {e}")
         raise HTTPException(status_code=500, detail=f"Error creating conversation: {str(e)}")
 
 
 @router.get("", response_model=List[ConversationListItem])
 async def list_conversations(
-    db: AsyncSession = Depends(get_db_session),
     status: Optional[str] = None,
     limit: int = 50,
     offset: int = 0
 ) -> List[ConversationListItem]:
     """
-    List conversations.
-    
+    List conversations from GCS transcripts folder.
+
     Args:
-        db: Database session
-        status: Filter by status
+        status: Filter by status (not used for GCS)
         limit: Maximum number of conversations to return
         offset: Number of conversations to skip
-        
+
     Returns:
-        List of conversations
+        List of conversations from transcripts
     """
     try:
-        query = select(Conversation).order_by(Conversation.created_at.desc())
-        
-        if status:
-            query = query.where(Conversation.status == status)
-        
-        query = query.limit(limit).offset(offset)
-        
-        result = await db.execute(query)
-        conversations = result.scalars().all()
-        
+        # Get transcripts from GCS
+        transcripts = transcript_storage.list_transcripts()
+
+        # Apply pagination
+        start = offset
+        end = offset + limit
+        transcripts = transcripts[start:end]
+
+        # Convert to response format
         response = []
-        for conv in conversations:
-            # Count participants
-            participant_result = await db.execute(
-                select(Participant).where(Participant.conversation_id == conv.id)
-            )
-            participants = participant_result.scalars().all()
-            
+        for transcript in transcripts:
             response.append(ConversationListItem(
-                id=conv.id,
-                title=conv.title,
-                status=conv.status,
-                location=conv.location,
-                event_name=conv.event_name,
-                started_at=conv.started_at,
-                created_at=conv.created_at,
-                participant_count=len(participants)
+                id=transcript['id'],
+                title=transcript.get('title', transcript['file_name']),
+                status=transcript.get('status', 'active'),
+                location=transcript.get('location'),
+                event_name=transcript.get('event_name'),
+                started_at=datetime.fromisoformat(transcript['created_at']) if transcript.get('created_at') else datetime.utcnow(),
+                created_at=datetime.fromisoformat(transcript['created_at']) if transcript.get('created_at') else datetime.utcnow(),
+                participant_count=0  # Will be populated after analysis
             ))
-        
+
+        logger.info(f"Listed {len(response)} conversations from GCS")
         return response
         
     except Exception as e:
@@ -213,36 +218,43 @@ async def list_conversations(
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 async def get_conversation(
-    conversation_id: str,
-    db: AsyncSession = Depends(get_db_session)
+    conversation_id: str
 ) -> ConversationResponse:
     """
-    Get a specific conversation.
-    
+    Get a specific conversation from GCS transcripts.
+
     Args:
-        conversation_id: Conversation ID
-        db: Database session
-        
+        conversation_id: Conversation/Transcript ID
+
     Returns:
-        Conversation detail
+        Conversation detail from transcript
     """
     try:
-        result = await db.execute(
-            select(Conversation)
-            .where(Conversation.id == conversation_id)
-            .options(
-                selectinload(Conversation.participants),
-                selectinload(Conversation.entities),
-                selectinload(Conversation.action_items)
-            )
-        )
-        conversation = result.scalar_one_or_none()
+        # Get transcript from GCS
+        transcript = transcript_storage.get_transcript(conversation_id)
 
-        if not conversation:
+        if not transcript:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
-        return _conversation_to_response(conversation)
-        
+        # Convert to response format
+        return ConversationResponse(
+            id=transcript['id'],
+            user_id=transcript.get('user_id', 'default_user'),
+            title=transcript.get('title', transcript['file_name']),
+            transcript=transcript['transcript'],
+            status=transcript.get('status', 'active'),
+            recording_url=transcript.get('recording_url'),
+            location=transcript.get('location'),
+            event_name=transcript.get('event_name'),
+            started_at=datetime.fromisoformat(transcript['created_at']) if transcript.get('created_at') else datetime.utcnow(),
+            ended_at=datetime.fromisoformat(transcript['updated_at']) if transcript.get('updated_at') else None,
+            created_at=datetime.fromisoformat(transcript['created_at']) if transcript.get('created_at') else datetime.utcnow(),
+            updated_at=datetime.fromisoformat(transcript['updated_at']) if transcript.get('updated_at') else datetime.utcnow(),
+            participants=[],  # Will be populated after analysis
+            entities=[],  # Will be populated after analysis
+            action_items=[]  # Will be populated after analysis
+        )
+
     except HTTPException:
         raise
     except Exception as e:

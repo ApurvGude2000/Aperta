@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     # Perplexity API Configuration (for Cross-Pollination Agent)
     perplexity_api_key: Optional[str] = None
 
+    # JINA AI Configuration (for embeddings)
+    jina_api_key: Optional[str] = None
+
+    # Elasticsearch Configuration (for semantic search)
+    elasticsearch_host: str = "http://localhost:9200"
+    elasticsearch_user: str = "elastic"
+    elasticsearch_password: Optional[str] = None
+
     # Fetch.ai Configuration
     fetchai_api_key: Optional[str] = None
     fetchai_agent_address: Optional[str] = None
@@ -115,33 +123,29 @@ class Settings(BaseSettings):
         env_parse_none_str="null"
     )
 
-    def __init__(self, **data):
-        """Initialize settings and build database URL from Supabase if provided."""
-        super().__init__(**data)
-
-        # Convert string CORS values to lists
+    def get_cors_origins_list(self) -> List[str]:
+        """Parse CORS origins from string to list"""
+        if not self.cors_origins:
+            return ["http://localhost:5173", "http://localhost:3000"]
         if isinstance(self.cors_origins, str):
-            self.cors_origins = [item.strip() for item in self.cors_origins.split(',') if item.strip()]
+            return [item.strip() for item in self.cors_origins.split(',') if item.strip()]
+        return self.cors_origins
+
+    def get_cors_methods_list(self) -> List[str]:
+        """Parse CORS methods from string to list"""
+        if not self.cors_methods:
+            return ["*"]
         if isinstance(self.cors_methods, str):
-            self.cors_methods = [item.strip() for item in self.cors_methods.split(',') if item.strip()]
+            return [item.strip() for item in self.cors_methods.split(',') if item.strip()]
+        return self.cors_methods
+
+    def get_cors_headers_list(self) -> List[str]:
+        """Parse CORS headers from string to list"""
+        if not self.cors_headers:
+            return ["*"]
         if isinstance(self.cors_headers, str):
-            self.cors_headers = [item.strip() for item in self.cors_headers.split(',') if item.strip()]
-
-        # Auto-enable S3 if AWS credentials provided
-        if self.aws_access_key_id and self.aws_secret_access_key:
-            self.use_s3 = True
-
-        # Auto-build database URL from Supabase credentials if provided
-        if self.supabase_db_password and self.supabase_url:
-            # Extract host from Supabase URL (e.g., xxxxx.supabase.co)
-            supabase_host = self.supabase_url.replace("https://", "").replace("http://", "")
-
-            # Build PostgreSQL async connection string
-            self.database_url = (
-                f"postgresql+asyncpg://postgres:{self.supabase_db_password}"
-                f"@db.{supabase_host}:5432/postgres"
-            )
-
+            return [item.strip() for item in self.cors_headers.split(',') if item.strip()]
+        return self.cors_headers
 
 
 @lru_cache()

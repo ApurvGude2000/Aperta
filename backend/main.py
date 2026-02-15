@@ -38,53 +38,72 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting NetworkAI backend...")
     console_logger.log_section("NetworkAI Backend Startup")
-    
-    # Initialize database
-    await init_db()
-    logger.info("Database initialized")
-    console_logger.log_info("Database initialized", "Startup")
+
+    # Initialize database (with graceful fallback)
+    try:
+        await init_db()
+        logger.info("Database initialized")
+        console_logger.log_info("Database initialized", "Startup")
+    except Exception as e:
+        logger.warning(f"Database initialization failed: {e}")
+        logger.warning("Server will run without database (audio processing still works)")
+        console_logger.log_info(f"Database unavailable - running in offline mode", "Startup")
     
     # Initialize RAG context manager
-    rag_manager = RAGContextManager(
-        persist_directory=settings.chroma_persist_dir,
-        collection_name=settings.chroma_collection_name
-    )
-    logger.info("RAG context manager initialized")
-    console_logger.log_info("RAG context manager initialized", "Startup")
+    try:
+        rag_manager = RAGContextManager()
+        logger.info("RAG context manager initialized")
+        console_logger.log_info("RAG context manager initialized", "Startup")
+    except Exception as e:
+        logger.warning(f"RAG context manager failed: {e}")
+        rag_manager = None
     
-    # Initialize agents
-    perception_agent = PerceptionAgent()
-    context_agent = ContextUnderstandingAgent()
-    privacy_agent = PrivacyGuardianAgent()
-    strategic_agent = StrategicNetworkingAgent()
-    followup_agent = FollowUpAgent()
-    
-    logger.info("All agents initialized")
-    console_logger.log_info("All 5 agents initialized", "Startup")
-    
-    # Initialize orchestrator
-    agents = {
-        "PerceptionAgent": perception_agent,
-        "ContextUnderstandingAgent": context_agent,
-        "PrivacyGuardianAgent": privacy_agent,
-        "StrategicNetworkingAgent": strategic_agent,
-        "FollowUpAgent": followup_agent
-    }
-    
-    orchestrator = AgentOrchestrator(agents=agents)
-    logger.info("Orchestrator initialized")
-    console_logger.log_info("Orchestrator initialized", "Startup")
-    
-    # Initialize intelligent router
-    router = IntelligentRouter()
-    logger.info("Intelligent router initialized")
-    console_logger.log_info("Intelligent router initialized", "Startup")
-    
+    # Initialize agents (with graceful fallback)
+    try:
+        perception_agent = PerceptionAgent()
+        context_agent = ContextUnderstandingAgent()
+        privacy_agent = PrivacyGuardianAgent()
+        strategic_agent = StrategicNetworkingAgent()
+        followup_agent = FollowUpAgent()
+
+        logger.info("All agents initialized")
+        console_logger.log_info("All 5 agents initialized", "Startup")
+
+        # Initialize orchestrator
+        agents = {
+            "PerceptionAgent": perception_agent,
+            "ContextUnderstandingAgent": context_agent,
+            "PrivacyGuardianAgent": privacy_agent,
+            "StrategicNetworkingAgent": strategic_agent,
+            "FollowUpAgent": followup_agent
+        }
+
+        orchestrator = AgentOrchestrator(agents)
+        logger.info("Orchestrator initialized")
+        console_logger.log_info("Orchestrator initialized", "Startup")
+    except Exception as e:
+        logger.warning(f"Agent initialization failed: {e}")
+        orchestrator = None
+
+    # Initialize intelligent router (with graceful fallback)
+    try:
+        router = IntelligentRouter()
+        logger.info("Intelligent router initialized")
+        console_logger.log_info("Intelligent router initialized", "Startup")
+    except Exception as e:
+        logger.warning(f"Intelligent router failed: {e}")
+        router = None
+
     # Set components in route modules
-    qa.set_qa_components(router, orchestrator, rag_manager)
-    conversations.set_conversation_orchestrator(orchestrator)
-    logger.info("Route components configured")
-    console_logger.log_info("Route components configured", "Startup")
+    try:
+        if router and orchestrator:
+            qa.set_qa_components(router, orchestrator, rag_manager)
+        if orchestrator:
+            conversations.set_conversation_orchestrator(orchestrator)
+        logger.info("Route components configured")
+        console_logger.log_info("Route components configured", "Startup")
+    except Exception as e:
+        logger.warning(f"Route configuration failed: {e}")
     
     console_logger.log_section("NetworkAI Backend Ready")
     logger.info("NetworkAI backend started successfully")

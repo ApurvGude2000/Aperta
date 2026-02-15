@@ -24,7 +24,7 @@ from agents import (
 from services.rag_context import RAGContextManager
 
 # Import routers
-from api.routes import qa, conversations, search, auth, dashboard, knowledge_graph
+from api.routes import qa, conversations, search, auth, dashboard, knowledge_graph, participant_extraction
 
 logger = setup_logger(__name__)
 
@@ -177,6 +177,7 @@ app.include_router(qa.router)
 app.include_router(conversations.router)
 app.include_router(search.router)
 app.include_router(knowledge_graph.router)
+app.include_router(participant_extraction.router)
 
 
 @app.get("/")

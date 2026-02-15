@@ -383,16 +383,17 @@ struct EventDetailView: View {
             transcriptionProgress = 0.8
             let protectedTranscript = try await LLMModelManager.shared.redactPII(from: recordingData.transcript)
 
-            // Create recording
+            // Create recording with proper duration
             transcriptionProgress = 0.9
+            let startTime = Date()
             var newRecording = Recording(
                 name: fileURL.deletingPathExtension().lastPathComponent,
                 transcript: protectedTranscript,
                 segments: recordingData.segments,
                 audioFilePath: recordingData.audioFilePath,
-                startTime: Date()
+                startTime: startTime
             )
-            newRecording.endTime = Date()
+            newRecording.endTime = startTime.addingTimeInterval(recordingData.duration)
 
             // Save to event
             var updatedEvent = displayEvent

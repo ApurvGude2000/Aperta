@@ -50,6 +50,7 @@ public class FileTranscriber: ObservableObject {
         let transcript: String
         let segments: [TranscriptSegment]
         let audioFilePath: String
+        let duration: TimeInterval
     }
 
     /// Transcribe an audio file
@@ -72,6 +73,9 @@ public class FileTranscriber: ObservableObject {
             let fileManager = FileManager.default
             let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let savedURL = documentsURL.appendingPathComponent(savedPath)
+
+            // Get audio duration
+            let audioDuration = try getAudioDuration(from: savedURL)
 
             // Transcribe
             let result = try await whisperKit.transcribe(
@@ -108,7 +112,8 @@ public class FileTranscriber: ObservableObject {
             return TranscriptionData(
                 transcript: transcript,
                 segments: segments,
-                audioFilePath: savedPath
+                audioFilePath: savedPath,
+                duration: audioDuration
             )
 
         } catch {
@@ -119,6 +124,15 @@ public class FileTranscriber: ObservableObject {
     }
 
     // MARK: - File Management
+
+    /// Get the duration of an audio file
+    private func getAudioDuration(from url: URL) throws -> TimeInterval {
+        let audioFile = try AVAudioFile(forReading: url)
+        let sampleRate = audioFile.fileFormat.sampleRate
+        let frameCount = audioFile.length
+        let duration = Double(frameCount) / sampleRate
+        return duration
+    }
 
     /// Save audio file to persistent documents directory
     private func saveAudioFile(from sourceURL: URL) throws -> String {

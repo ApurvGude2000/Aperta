@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct PastEventsView: View {
     @State private var events: [Event] = []
@@ -127,6 +128,12 @@ struct EventDetailView: View {
     @State private var newRecordingName = ""
     @State private var showDeleteConfirmation = false
     @State private var showRenameDialog = false
+    @State private var showFileImporter = false
+    @State private var isTranscribing = false
+    @State private var transcriptionProgress: Double = 0
+    @State private var transcriptionError: String?
+    @State private var showTranscriptionError = false
+    @StateObject private var fileTranscriber = FileTranscriber()
 
     private var displayEvent: Event {
         refreshedEvent ?? event
@@ -145,11 +152,29 @@ struct EventDetailView: View {
                     showRecordingView = true
                 }) {
                     HStack {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "mic.circle.fill")
                             .foregroundColor(.blue)
-                        Text("Add New Recording")
+                        Text("Record New Audio")
                             .foregroundColor(.primary)
                         Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+
+                Button(action: {
+                    showFileImporter = true
+                }) {
+                    HStack {
+                        Image(systemName: "doc.badge.plus")
+                            .foregroundColor(.green)
+                        Text("Add Recording from File")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
                     }
                 }
             }
@@ -262,6 +287,132 @@ struct EventDetailView: View {
                 }
             }
             .presentationDetents([.height(200)])
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.audio, .mp3, .wav, .mpeg4Audio],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileSelection(result)
+        }
+        .overlay {
+            if isTranscribing {
+                ZStack {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 20) {
+                        ProgressView(value: transcriptionProgress)
+                            .progressViewStyle(.linear)
+                            .frame(width: 200)
+
+                        VStack(spacing: 8) {
+                            Text("Transcribing Audio")
+                                .font(.headline)
+                            Text(progressMessage)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(30)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(radius: 20)
+                }
+            }
+        }
+        .alert("Transcription Error", isPresented: $showTranscriptionError) {
+            Button("OK") { transcriptionError = nil }
+        } message: {
+            Text(transcriptionError ?? "Unknown error occurred")
+        }
+    }
+
+    private var progressMessage: String {
+        if transcriptionProgress < 0.3 {
+            return "Loading Whisper model..."
+        } else if transcriptionProgress < 0.6 {
+            return "Processing audio..."
+        } else if transcriptionProgress < 0.9 {
+            return "Running PII protection..."
+        } else {
+            return "Saving recording..."
+        }
+    }
+
+    private func handleFileSelection(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let fileURL = urls.first else { return }
+
+            Task {
+                await transcribeFile(fileURL)
+            }
+
+        case .failure(let error):
+            transcriptionError = "Failed to select file: \(error.localizedDescription)"
+            showTranscriptionError = true
+        }
+    }
+
+    private func transcribeFile(_ fileURL: URL) async {
+        isTranscribing = true
+        transcriptionProgress = 0.1
+
+        do {
+            // Load Whisper model
+            transcriptionProgress = 0.2
+            try await fileTranscriber.loadModel(variant: "small")
+
+            // Load PII Guardian
+            transcriptionProgress = 0.3
+            try await LLMModelManager.shared.loadModel()
+
+            // Transcribe the file
+            transcriptionProgress = 0.4
+            let recordingData = try await fileTranscriber.transcribeFile(
+                fileURL: fileURL,
+                progressCallback: { progress in
+                    Task { @MainActor in
+                        transcriptionProgress = 0.4 + (progress * 0.4) // 0.4 to 0.8
+                    }
+                }
+            )
+
+            // Run PII protection
+            transcriptionProgress = 0.8
+            let protectedTranscript = try await LLMModelManager.shared.redactPII(from: recordingData.transcript)
+
+            // Create recording
+            transcriptionProgress = 0.9
+            var newRecording = Recording(
+                name: fileURL.deletingPathExtension().lastPathComponent,
+                transcript: protectedTranscript,
+                segments: recordingData.segments,
+                audioFilePath: recordingData.audioFilePath,
+                startTime: Date()
+            )
+            newRecording.endTime = Date()
+
+            // Save to event
+            var updatedEvent = displayEvent
+            updatedEvent.recordings.append(newRecording)
+            try EventStorageManager.shared.saveEvent(updatedEvent)
+
+            transcriptionProgress = 1.0
+            refreshedEvent = updatedEvent
+
+            print("✅ File transcribed and saved: \(newRecording.name)")
+
+            // Wait a moment to show completion
+            try await Task.sleep(nanoseconds: 500_000_000)
+            isTranscribing = false
+
+        } catch {
+            isTranscribing = false
+            transcriptionError = error.localizedDescription
+            showTranscriptionError = true
+            print("❌ Transcription error: \(error)")
         }
     }
 

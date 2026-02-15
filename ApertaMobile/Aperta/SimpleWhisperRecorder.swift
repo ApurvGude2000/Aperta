@@ -13,6 +13,9 @@ public class SimpleWhisperRecorder: ObservableObject {
     @Published public private(set) var isPaused = false
     @Published public private(set) var isTranscribing = false
     @Published public private(set) var transcriptionText = ""
+    @Published public private(set) var originalTranscript = ""  // Unredacted
+    @Published public private(set) var piiProtectionApplied = false
+    @Published public private(set) var piiStats = ""
     @Published public private(set) var modelLoadingProgress: Double = 0
     @Published public private(set) var isModelLoaded = false
     @Published public private(set) var error: String?
@@ -246,7 +249,25 @@ public class SimpleWhisperRecorder: ObservableObject {
             }
 
             // Extract text from segments
-            transcriptionText = result.map { $0.text }.joined(separator: " ")
+            let rawTranscript = result.map { $0.text }.joined(separator: " ")
+
+            // Apply PII protection
+            let protected = await protectTranscript(rawTranscript)
+
+            // Store both versions
+            originalTranscript = rawTranscript
+            transcriptionText = protected.redacted
+            piiProtectionApplied = protected.wasRedacted
+            piiStats = protected.summary
+
+            // Log protection results
+            if protected.wasRedacted {
+                print("🛡️ PII Guardian: \(protected.summary)")
+                for step in protected.reasoning {
+                    print("  \(step)")
+                }
+            }
+
             isTranscribing = false
 
         } catch {
@@ -254,6 +275,12 @@ public class SimpleWhisperRecorder: ObservableObject {
             self.error = "Transcription failed: \(error.localizedDescription)"
             throw error
         }
+    }
+
+    // MARK: - PII Protection
+
+    private func protectTranscript(_ transcript: String) async -> ProtectedTranscript {
+        return await PIIProtectionManager.shared.protectTranscript(transcript)
     }
 
     // MARK: - Audio Level Monitoring

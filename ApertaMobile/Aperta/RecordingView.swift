@@ -244,10 +244,29 @@ struct RecordingView: View {
             .padding(.horizontal)
             .padding(.top, 20)
             
-            if recorder.isTranscribing {
-                HStack {
-                    ProgressView()
-                    Text("Transcribing...")
+            // Status indicators
+            VStack(spacing: 8) {
+                if recorder.isTranscribing {
+                    HStack {
+                        ProgressView()
+                        Text("Transcribing...")
+                    }
+                }
+
+                // PII Protection badge
+                if recorder.piiProtectionApplied {
+                    HStack(spacing: 6) {
+                        Image(systemName: "shield.checkmark.fill")
+                            .foregroundColor(.green)
+                            .font(.caption)
+                        Text(recorder.piiStats)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(8)
                 }
             }
         }

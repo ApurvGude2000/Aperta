@@ -327,27 +327,28 @@ struct RecordingView: View {
                                         print("🎵 Audio saved at: \(recordingData.audioFilePath)")
                                         print("📊 Event now has \(currentEvent.recordings.count) recording(s)")
 
-                                        // Auto-upload to backend
+                                        // CRITICAL: Run PII redaction BEFORE upload
+                                        uploadStatus = "Redacting PII..."
+                                        print("🔒 Running PII Guardian on transcript...")
+                                        let redactedTranscript = await LLMModelManager.shared.redactPII(from: recordingData.transcript)
+                                        print("🔒 PII redaction complete (\(redactedTranscript.count) chars)")
+
+                                        // Auto-upload redacted transcript (NO audio file for privacy)
                                         uploadStatus = "Uploading to cloud..."
-                                        if let audioPath = recordingData.audioFilePath {
-                                            let fileManager = FileManager.default
-                                            let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                                            let audioURL = documentsURL.appendingPathComponent(audioPath)
+                                        let result = await uploadService.uploadTranscriptOnly(
+                                            transcriptText: redactedTranscript,
+                                            eventName: event.name,
+                                            location: event.location
+                                        )
 
-                                            let result = await uploadService.uploadAudioFile(
-                                                audioURL,
-                                                eventName: event.name,
-                                                location: event.location
-                                            )
-
-                                            switch result {
-                                            case .success(let response):
-                                                uploadStatus = "✓ Uploaded"
-                                                print("✅ Upload successful: \(response.message)")
-                                            case .failure(let error):
-                                                uploadStatus = "✗ Upload failed: \(error.localizedDescription)"
-                                                print("❌ Upload failed: \(error)")
-                                            }
+                                        switch result {
+                                        case .success(let response):
+                                            uploadStatus = "✓ Uploaded (PII-protected)"
+                                            print("✅ Upload successful: \(response.message)")
+                                            print("📄 Saved to: \(response.transcript_file_path)")
+                                        case .failure(let error):
+                                            uploadStatus = "✗ Upload failed: \(error.localizedDescription)"
+                                            print("❌ Upload failed: \(error)")
                                         }
 
                                     } catch {

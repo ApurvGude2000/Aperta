@@ -122,6 +122,11 @@ struct EventDetailView: View {
     let event: Event
     @State private var showRecordingView = false
     @State private var refreshedEvent: Event?
+    @State private var recordingToDelete: Recording?
+    @State private var recordingToRename: Recording?
+    @State private var newRecordingName = ""
+    @State private var showDeleteConfirmation = false
+    @State private var showRenameDialog = false
 
     private var displayEvent: Event {
         refreshedEvent ?? event
@@ -155,17 +160,48 @@ struct EventDetailView: View {
                         .foregroundColor(.gray)
                         .italic()
                 } else {
-                    ForEach(displayEvent.recordings) { recording in
+                    ForEach(Array(displayEvent.recordings.enumerated()), id: \.element.id) { index, recording in
                         NavigationLink(destination: TranscriptDetailView(recording: recording)) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Recording \(recording.startTime, style: .time)")
+                                Text(recording.name.isEmpty ? "Recording \(index + 1)" : recording.name)
                                     .font(.headline)
-                                if let duration = recording.duration {
-                                    Text("Duration: \(formatDuration(duration))")
+                                HStack(spacing: 12) {
+                                    if let duration = recording.duration {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "clock")
+                                                .font(.caption2)
+                                            Text(formatDuration(duration))
+                                        }
                                         .font(.caption)
                                         .foregroundColor(.gray)
+                                    }
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "text.quote")
+                                            .font(.caption2)
+                                        Text("\(recording.transcript.count) chars")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
                                 }
                             }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                recordingToDelete = recording
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                recordingToRename = recording
+                                newRecordingName = recording.name.isEmpty ? "Recording \(index + 1)" : recording.name
+                                showRenameDialog = true
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                     }
                 }
@@ -182,6 +218,51 @@ struct EventDetailView: View {
         .onAppear {
             refreshEvent()
         }
+        .alert("Delete Recording", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                recordingToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let recording = recordingToDelete {
+                    deleteRecording(recording)
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this recording? This action cannot be undone.")
+        }
+        .sheet(isPresented: $showRenameDialog) {
+            NavigationStack {
+                VStack(spacing: 20) {
+                    Text("Rename Recording")
+                        .font(.headline)
+                        .padding(.top)
+
+                    TextField("Recording name", text: $newRecordingName)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(.horizontal)
+
+                    Spacer()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showRenameDialog = false
+                            recordingToRename = nil
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            if let recording = recordingToRename {
+                                renameRecording(recording, newName: newRecordingName)
+                            }
+                            showRenameDialog = false
+                        }
+                        .disabled(newRecordingName.isEmpty)
+                    }
+                }
+            }
+            .presentationDetents([.height(200)])
+        }
     }
 
     private func refreshEvent() {
@@ -192,6 +273,53 @@ struct EventDetailView: View {
         } catch {
             print("❌ Failed to refresh event: \(error)")
         }
+    }
+
+    private func deleteRecording(_ recording: Recording) {
+        guard var updatedEvent = refreshedEvent ?? allEvents.first(where: { $0.id == event.id }) else { return }
+
+        updatedEvent.recordings.removeAll { $0.id == recording.id }
+
+        do {
+            try EventStorageManager.shared.saveEvent(updatedEvent)
+            refreshedEvent = updatedEvent
+            print("✅ Recording deleted: \(recording.id)")
+
+            // Delete audio file if it exists
+            if let audioPath = recording.audioFilePath {
+                let fileManager = FileManager.default
+                let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let audioURL = documentsURL.appendingPathComponent(audioPath)
+                try? fileManager.removeItem(at: audioURL)
+                print("🗑️ Audio file deleted: \(audioPath)")
+            }
+        } catch {
+            print("❌ Error deleting recording: \(error)")
+        }
+
+        recordingToDelete = nil
+    }
+
+    private func renameRecording(_ recording: Recording, newName: String) {
+        guard var updatedEvent = refreshedEvent ?? allEvents.first(where: { $0.id == event.id }) else { return }
+
+        if let index = updatedEvent.recordings.firstIndex(where: { $0.id == recording.id }) {
+            updatedEvent.recordings[index].name = newName
+
+            do {
+                try EventStorageManager.shared.saveEvent(updatedEvent)
+                refreshedEvent = updatedEvent
+                print("✅ Recording renamed: \(recording.id) -> \(newName)")
+            } catch {
+                print("❌ Error renaming recording: \(error)")
+            }
+        }
+
+        recordingToRename = nil
+    }
+
+    private var allEvents: [Event] {
+        (try? EventStorageManager.shared.loadAllEvents()) ?? []
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {

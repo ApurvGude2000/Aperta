@@ -75,21 +75,24 @@ export function KnowledgeGraph() {
       console.log('Fetched data:', { nodes: data.nodes.length, edges: data.edges.length });
       console.log('Dimensions:', dimensions);
 
-      // Set RANDOM spread out positions across the ENTIRE screen
-      const padding = 100;
-      const width = Math.max(dimensions.width, 1200);
-      const height = Math.max(dimensions.height, 800);
+      // Position nodes in CIRCLE around CENTER of screen
+      const width = Math.max(dimensions.width, 1400);
+      const height = Math.max(dimensions.height, 900);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) * 0.3; // 30% of smaller dimension
 
       const nodes = data.nodes.map((node, i) => {
-        // Spread across FULL area
-        const x = padding + Math.random() * (width - padding * 2);
-        const y = padding + Math.random() * (height - padding * 2);
-        console.log(`Node ${i} position:`, { x, y, width, height });
+        // Arrange in circle around center
+        const angle = (i / data.nodes.length) * 2 * Math.PI;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        console.log(`Node ${i} centered at:`, { x, y, centerX, centerY });
         return {
           ...node,
           x: x,
           y: y,
-          fx: x,  // Fix at initial position
+          fx: x,  // Fix at position
           fy: y
         };
       });
@@ -226,8 +229,8 @@ export function KnowledgeGraph() {
                     }}
                     nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                       const label = node.name || 'Unknown';
-                      const fontSize = 20 / globalScale;
-                      const nodeSize = 40;
+                      const fontSize = 22 / globalScale;
+                      const nodeSize = 55;
 
                       // Draw shadow
                       ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
@@ -308,9 +311,16 @@ export function KnowledgeGraph() {
                       return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha})`;
                     }}
                     linkWidth={(link: any) => {
-                      // DRAMATIC variation in line thickness based on weight
-                      // Weight 0.5 = 1px, Weight 1.0 = 3px, Weight 2.0 = 8px, Weight 3.0 = 15px
-                      return Math.max(1, Math.min(link.weight * 5, 20));
+                      // THIN lines with dramatic variation
+                      // Weight 3.1 = 1px (barely visible)
+                      // Weight 3.5 = 2px
+                      // Weight 4.0 = 3px
+                      // Weight 4.5 = 4px
+                      // Weight 5.0 = 5px (thickest)
+                      const minWeight = 3.1;
+                      const maxWeight = 5.0;
+                      const normalized = (link.weight - minWeight) / (maxWeight - minWeight);
+                      return Math.max(0.5, Math.min(normalized * 5, 6));
                     }}
                     linkDirectionalParticles={(link: any) => {
                       // More particles for stronger connections

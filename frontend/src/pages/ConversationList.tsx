@@ -5,10 +5,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { ConversationCard } from '../components/ConversationCard';
-import type { Conversation } from '../types';
+import type { ConversationListItem } from '../types';
 
 export function ConversationList() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();

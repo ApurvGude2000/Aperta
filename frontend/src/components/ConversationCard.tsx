@@ -1,10 +1,10 @@
 // ABOUTME: Card component for displaying conversation summary in list view
-// ABOUTME: Shows title, preview, metadata (date, duration, word count)
+// ABOUTME: Shows title, preview, metadata (date, location, participant count)
 
-import type { Conversation } from '../types';
+import type { ConversationListItem } from '../types';
 
 interface Props {
-  conversation: Conversation;
+  conversation: ConversationListItem;
   onClick: () => void;
 }
 
@@ -19,12 +19,18 @@ export function ConversationCard({ conversation, onClick }: Props) {
     });
   };
 
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes} min`;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return '#10b981';
+      case 'archived':
+        return '#6b7280';
+      case 'pending':
+        return '#f59e0b';
+      default:
+        return '#3b82f6';
+    }
   };
-
-  const preview = conversation.transcript.substring(0, 150) + (conversation.transcript.length > 150 ? '...' : '');
 
   return (
     <div
@@ -48,22 +54,32 @@ export function ConversationCard({ conversation, onClick }: Props) {
         e.currentTarget.style.borderColor = '#e5e7eb';
       }}
     >
-      <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
-        {conversation.title}
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
+          {conversation.title || 'Untitled Conversation'}
+        </h3>
+        <span
+          style={{
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '500',
+            backgroundColor: getStatusColor(conversation.status) + '20',
+            color: getStatusColor(conversation.status),
+          }}
+        >
+          {conversation.status}
+        </span>
+      </div>
 
-      <p style={{ color: '#6b7280', margin: '0 0 12px 0', lineHeight: '1.5' }}>
-        {preview}
-      </p>
-
-      <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#9ca3af' }}>
-        <span>📅 {formatDate(conversation.start_time)}</span>
-        <span>⏱️ {formatDuration(conversation.duration)}</span>
-        <span>📝 {conversation.word_count} words</span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '14px', color: '#6b7280', marginTop: '12px' }}>
+        <span>📅 {formatDate(conversation.started_at)}</span>
+        <span>👥 {conversation.participant_count} participant{conversation.participant_count !== 1 ? 's' : ''}</span>
+        {conversation.location && <span>📍 {conversation.location}</span>}
       </div>
 
       {conversation.event_name && (
-        <div style={{ marginTop: '8px', fontSize: '14px', color: '#3b82f6' }}>
+        <div style={{ marginTop: '8px', fontSize: '14px', color: '#3b82f6', fontWeight: '500' }}>
           🎯 {conversation.event_name}
         </div>
       )}

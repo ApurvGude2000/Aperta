@@ -116,52 +116,79 @@ async def ask_question(
         # Load RAG context if requested and conversation exists
         context = ""
         if request.use_rag and request.conversation_id:
+            logger.info(f"Loading context for conversation_id: {request.conversation_id}")
             try:
                 # Get conversation transcript
                 result = await db.execute(
                     select(Conversation).where(Conversation.id == request.conversation_id)
                 )
                 conversation = result.scalar_one_or_none()
-                
-                if conversation and conversation.transcript:
-                    if rag_manager:
-                        context = await rag_manager.get_relevant_context(
-                            query=request.question,
-                            conversation_id=request.conversation_id
-                        )
-                    else:
-                        # Fallback: use full transcript
+
+                if conversation:
+                    logger.info(f"Conversation found: {conversation.title}")
+                    if conversation.transcript:
+                        transcript_length = len(conversation.transcript)
+                        logger.info(f"Transcript found, length: {transcript_length} chars")
+
+                        # For now, always use full transcript
+                        # RAG could be used to chunk and retrieve relevant parts for very long transcripts
                         context = conversation.transcript
+                        logger.info(f"Using full transcript as context, length: {len(context)} chars")
+                    else:
+                        logger.warning(f"Conversation {request.conversation_id} has no transcript")
+                else:
+                    logger.warning(f"Conversation {request.conversation_id} not found")
             except Exception as e:
-                logger.warning(f"Failed to load RAG context: {e}")
+                logger.error(f"Failed to load RAG context: {e}", exc_info=True)
+        else:
+            if not request.use_rag:
+                logger.info("RAG disabled by request")
+            if not request.conversation_id:
+                logger.info("No conversation_id provided, answering general question")
         
         # Build full query with context
         full_query = request.question
         if context:
             full_query = f"Context:\n{context}\n\nQuestion: {request.question}"
+            logger.info(f"Built full_query with context, total length: {len(full_query)} chars")
+        else:
+            logger.info("No context available, using question only")
         
         # Route the question to appropriate agents
         routing_decision = await router_instance.route_query(
             query=full_query,
-            conversation_id=request.conversation_id
+            context={"conversation_id": request.conversation_id} if request.conversation_id else None
         )
         
-        # Execute agents via orchestrator
-        orchestration_result = await orchestrator_instance.execute_agents(
-            query=full_query,
-            selected_agents=routing_decision["selected_agents"],
-            conversation_id=request.conversation_id,
-            context=context
-        )
-        
+        # Build agent requests for orchestrator
+        agent_requests = [
+            {
+                "agent_name": agent_name,
+                "prompt": full_query,
+                "context": {"conversation_id": request.conversation_id} if request.conversation_id else None
+            }
+            for agent_name in routing_decision.get("recommended_agents", [])
+        ]
+
+        # Log what we're sending to agents
+        for req in agent_requests:
+            logger.info(f"Agent request for {req['agent_name']}: prompt_length={len(req['prompt'])} chars")
+
+        # Execute agents via orchestrator (parallel execution)
+        if agent_requests:
+            agent_results = await orchestrator_instance.execute_agents_parallel(agent_requests)
+        else:
+            # No agents selected, use a default response
+            agent_results = []
+
         # Extract responses
         agent_responses = {}
-        for agent_result in orchestration_result["agent_results"]:
-            agent_name = agent_result["agent"]
-            agent_responses[agent_name] = agent_result.get("result", "")
-        
+        for agent_result in agent_results:
+            agent_name = agent_result["agent_name"]
+            agent_responses[agent_name] = agent_result.get("response", "")
+
         # Synthesize final answer from agent responses
-        final_answer = _synthesize_answer(orchestration_result["agent_results"])
+        final_answer = _synthesize_answer(agent_results)
         
         execution_time = time.time() - start_time
         
@@ -169,7 +196,7 @@ async def ask_question(
         interaction = QAInteraction(
             session_id=session.id,
             question=request.question,
-            routed_agents=routing_decision["selected_agents"],
+            routed_agents=routing_decision.get("recommended_agents", []),
             responses=agent_responses,
             final_answer=final_answer,
             execution_time=execution_time
@@ -182,7 +209,7 @@ async def ask_question(
             interaction_id=interaction.id,
             question=request.question,
             final_answer=final_answer,
-            routed_agents=routing_decision["selected_agents"],
+            routed_agents=routing_decision.get("recommended_agents", []),
             execution_time=execution_time,
             timestamp=interaction.timestamp
         )
@@ -366,9 +393,9 @@ def _synthesize_answer(agent_results: List[Dict[str, Any]]) -> str:
     # Simple synthesis: concatenate non-empty results
     answers = []
     for result in agent_results:
-        agent_name = result.get("agent", "Unknown")
-        response = result.get("result", "")
-        
+        agent_name = result.get("agent_name") or result.get("agent", "Unknown")
+        response = result.get("response", "")
+
         if response and isinstance(response, str) and response.strip():
             answers.append(f"**{agent_name}:**\n{response.strip()}")
     

@@ -18,12 +18,12 @@ class IntelligentRouter:
 
     # Intent to agent mapping
     INTENT_AGENT_MAP = {
-        "privacy_check": ["AG3_Privacy_Guardian"],
-        "entity_extraction": ["AG4_Context_Understanding"],
-        "lead_scoring": ["AG6_Follow_Up_Generator"],
-        "goal_alignment": ["AG5_Strategic_Networking"],
-        "system_monitoring": ["AG2_Perception"],
-        "general_query": ["AG4_Context_Understanding", "AG5_Strategic_Networking"],
+        "privacy_check": ["privacy_guardian"],
+        "entity_extraction": ["context_understanding"],
+        "lead_scoring": ["follow_up"],
+        "goal_alignment": ["strategic_networking"],
+        "system_monitoring": ["perception"],
+        "general_query": ["context_understanding", "strategic_networking"],
     }
 
     # Intent descriptions for Claude

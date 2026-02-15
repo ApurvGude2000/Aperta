@@ -112,14 +112,20 @@ class ClaudeBaseAgent:
         start_time: datetime
     ) -> Dict[str, Any]:
         """Execute agent and return complete response."""
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=self.system_prompt,
-            messages=messages,
-            tools=self.tools if self.tools else None
-        )
+        # Build API call parameters
+        api_params = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": self.system_prompt,
+            "messages": messages,
+        }
+
+        # Only include tools if they exist
+        if self.tools:
+            api_params["tools"] = self.tools
+
+        response = await self.client.messages.create(**api_params)
 
         # Update statistics
         execution_time = (datetime.utcnow() - start_time).total_seconds()
@@ -158,14 +164,20 @@ class ClaudeBaseAgent:
         start_time: datetime
     ) -> AsyncIterator[Dict[str, Any]]:
         """Execute agent with streaming response."""
-        async with self.client.messages.stream(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=self.system_prompt,
-            messages=messages,
-            tools=self.tools if self.tools else None
-        ) as stream:
+        # Build API call parameters
+        api_params = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": self.system_prompt,
+            "messages": messages,
+        }
+
+        # Only include tools if they exist
+        if self.tools:
+            api_params["tools"] = self.tools
+
+        async with self.client.messages.stream(**api_params) as stream:
             total_tokens = 0
             async for text in stream.text_stream:
                 yield {
